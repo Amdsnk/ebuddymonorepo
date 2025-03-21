@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   Box,
@@ -20,28 +20,79 @@ import {
   Rating,
   useTheme,
 } from "@mui/material"
-import RefreshIcon from "@mui/icons-material/Refresh"
-import PersonIcon from "@mui/icons-material/Person"
 import { useAuth } from "@/hooks/useAuth"
 import ThemeToggle from "@/components/ThemeToggle"
-import { useThemeContext } from "@/theme/CustomThemeProvider"
-import { useUserData } from "@/hooks/useUserData"
-import SkipLink from "@/components/SkipLink"
+import Toast from "@/components/Toast"
+import type { User } from "@ebuddy/shared"
 
 export default function DashboardClient() {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const theme = useTheme()
-  const { mode, toggleTheme } = useThemeContext()
-
-  // Use React Query hook instead of useState and useEffect
-  const { userData, isLoading: fetchLoading, isError, error, refetch: fetchUserData } = useUserData(user?.uid)
+  const [userData, setUserData] = useState<User | null>(null)
+  const [fetchLoading, setFetchLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [toast, setToast] = useState({ open: false, message: "", type: "success" as const })
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login")
     }
   }, [user, loading, router])
+
+  const fetchUserData = async () => {
+    if (!user?.uid) return
+
+    try {
+      setFetchLoading(true)
+      setError(null)
+
+      const token = localStorage.getItem("token")
+      if (!token) {
+        throw new Error("No authentication token found")
+      }
+
+      const response = await fetch(`/api/user/${user.uid}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch user data: ${response.status}`)
+      }
+
+      const data = await response.json()
+      if (!data.success) {
+        throw new Error(data.error || "Failed to fetch user data")
+      }
+
+      setUserData(data.data)
+      // Show success toast
+      setToast({
+        open: true,
+        message: "User data refreshed successfully",
+        type: "success",
+      })
+    } catch (err) {
+      console.error("Error fetching user data:", err)
+      setError(err instanceof Error ? err.message : "Failed to fetch user data")
+      // Show error toast
+      setToast({
+        open: true,
+        message: err instanceof Error ? err.message : "Failed to fetch user data",
+        type: "error",
+      })
+    } finally {
+      setFetchLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (user?.uid) {
+      fetchUserData()
+    }
+  }, [user?.uid])
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
@@ -66,17 +117,14 @@ export default function DashboardClient() {
     return null
   }
 
-  const errorMessage = isError ? (error instanceof Error ? error.message : "Failed to fetch user data") : null
-
   return (
-    <Box sx={{ flexGrow: 1, minHeight: "100vh" }}>
-      <SkipLink />
+    <Box sx={{ flexGrow: 1, minHeight: "100vh", bgcolor: "#f5f8fa" }}>
       <AppBar position="static" sx={{ bgcolor: theme.palette.primary.main }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
             EBuddy Dashboard
           </Typography>
-          <ThemeToggle onToggle={toggleTheme} isDarkMode={mode === "dark"} />
+          <ThemeToggle />
           <Button
             color="inherit"
             onClick={signOut}
@@ -104,9 +152,6 @@ export default function DashboardClient() {
                 borderRadius: 2,
                 boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
               }}
-              id="main-content" // Add this ID for skip link
-              tabIndex={-1} // Make it focusable but not in tab order
-              aria-label="Main content"
             >
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
                 <Typography variant="h4" sx={{ fontWeight: 600 }}>
@@ -115,9 +160,8 @@ export default function DashboardClient() {
                 <Button
                   variant="outlined"
                   color="primary"
-                  onClick={() => fetchUserData()}
+                  onClick={fetchUserData}
                   disabled={fetchLoading}
-                  startIcon={<RefreshIcon />}
                   sx={{ textTransform: "none" }}
                 >
                   {fetchLoading ? "Refreshing..." : "Refresh Data"}
@@ -130,13 +174,13 @@ export default function DashboardClient() {
                 </Box>
               )}
 
-              {errorMessage && (
+              {error && (
                 <Typography
                   color="error"
                   align="center"
                   sx={{ my: 2, p: 2, bgcolor: "rgba(211, 47, 47, 0.1)", borderRadius: 1 }}
                 >
-                  Error: {errorMessage}
+                  Error: {error}
                 </Typography>
               )}
 
@@ -159,7 +203,7 @@ export default function DashboardClient() {
                           bgcolor: theme.palette.primary.main,
                         }}
                       >
-                        {!userData.photoURL && <PersonIcon fontSize="large" />}
+                        {!userData.photoURL && "👤"}
                       </Avatar>
                       <Box>
                         <Typography variant="h5" sx={{ fontWeight: 600 }}>
@@ -234,6 +278,13 @@ export default function DashboardClient() {
           </Grid>
         </Grid>
       </Container>
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+      />
     </Box>
   )
 }
