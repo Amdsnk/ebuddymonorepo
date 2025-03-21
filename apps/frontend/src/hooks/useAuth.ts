@@ -1,129 +1,110 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import type { User as FirebaseUser } from "firebase/auth"
-import { initializeApp } from "@/config/firebase"
+import { useRouter } from "next/navigation"
 
-// Define types for auth functions to avoid importing them directly
-type AuthFunctions = {
-  getAuth: any
-  signInWithEmailAndPassword: (auth: any, email: string, password: string) => Promise<any>
-  createUserWithEmailAndPassword: (auth: any, email: string, password: string) => Promise<any>
-  signOut: (auth: any) => Promise<void>
-  onAuthStateChanged: (auth: any, callback: (user: FirebaseUser | null) => void) => () => void
+// Define user type without importing from Firebase
+interface User {
+  uid: string
+  email: string | null
+  displayName: string | null
+  photoURL: string | null
 }
 
-// Cache for auth functions
-let authFunctions: AuthFunctions | null = null
-
-// Function to dynamically import auth functions
-async function getAuthFunctions(): Promise<AuthFunctions> {
-  if (authFunctions) return authFunctions
-
-  const {
-    getAuth,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut: firebaseSignOut,
-    onAuthStateChanged,
-  } = await import("firebase/auth")
-
-  authFunctions = {
-    getAuth,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut: firebaseSignOut,
-    onAuthStateChanged,
+// Define auth response type
+interface AuthResponse {
+  success: boolean
+  data?: {
+    token: string
+    user: User
   }
-
-  return authFunctions
+  error?: string
 }
 
 export function useAuth() {
-  const [user, setUser] = useState<FirebaseUser | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [authReady, setAuthReady] = useState(false)
-  const [auth, setAuth] = useState<any>(null)
+  const router = useRouter()
 
-  // Initialize Firebase and Auth
+  // Check for user in localStorage on mount
   useEffect(() => {
-    let unsubscribe = () => {}
+    const storedUser = localStorage.getItem("user")
+    const storedToken = localStorage.getItem("token")
 
-    async function initAuth() {
-      try {
-        const app = initializeApp()
-        const { getAuth, onAuthStateChanged } = await getAuthFunctions()
-        const authInstance = getAuth(app)
-        setAuth(authInstance)
-
-        unsubscribe = onAuthStateChanged(authInstance, (user) => {
-          setUser(user)
-          setLoading(false)
-        })
-
-        setAuthReady(true)
-      } catch (error) {
-        console.error("Error initializing auth:", error)
-        setLoading(false)
-      }
+    if (storedUser && storedToken) {
+      setUser(JSON.parse(storedUser))
     }
 
-    initAuth()
-
-    return () => unsubscribe()
+    setLoading(false)
   }, [])
 
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      if (!authReady) {
-        throw new Error("Auth not initialized")
+  const signIn = useCallback(async (email: string, password: string) => {
+    setLoading(true)
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data: AuthResponse = await response.json()
+
+      if (!data.success || !data.data) {
+        throw new Error(data.error || "Authentication failed")
       }
 
-      setLoading(true)
-      try {
-        const { signInWithEmailAndPassword } = await getAuthFunctions()
-        const userCredential = await signInWithEmailAndPassword(auth, email, password)
-        setUser(userCredential.user)
-        return userCredential.user
-      } finally {
-        setLoading(false)
-      }
-    },
-    [auth, authReady],
-  )
+      // Store user and token in localStorage
+      localStorage.setItem("user", JSON.stringify(data.data.user))
+      localStorage.setItem("token", data.data.token)
 
-  const signUp = useCallback(
-    async (email: string, password: string) => {
-      if (!authReady) {
-        throw new Error("Auth not initialized")
+      setUser(data.data.user)
+      return data.data.user
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const signUp = useCallback(async (email: string, password: string) => {
+    setLoading(true)
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data: AuthResponse = await response.json()
+
+      if (!data.success || !data.data) {
+        throw new Error(data.error || "Registration failed")
       }
 
-      setLoading(true)
-      try {
-        const { createUserWithEmailAndPassword } = await getAuthFunctions()
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-        setUser(userCredential.user)
-        return userCredential.user
-      } finally {
-        setLoading(false)
-      }
-    },
-    [auth, authReady],
-  )
+      // Store user and token in localStorage
+      localStorage.setItem("user", JSON.stringify(data.data.user))
+      localStorage.setItem("token", data.data.token)
+
+      setUser(data.data.user)
+      return data.data.user
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   const signOut = useCallback(async () => {
-    if (!authReady) {
-      throw new Error("Auth not initialized")
-    }
+    // Clear localStorage
+    localStorage.removeItem("user")
+    localStorage.removeItem("token")
 
-    try {
-      const { signOut } = await getAuthFunctions()
-      await signOut(auth)
-      setUser(null)
-    } catch (error) {
-      console.error("Error signing out:", error)
-    }
-  }, [auth, authReady])
+    // Clear user state
+    setUser(null)
+
+    // Redirect to login page
+    router.push("/login")
+  }, [router])
 
   return {
     user,
