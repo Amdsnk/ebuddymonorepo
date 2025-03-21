@@ -8,6 +8,7 @@ export interface User {
   recentlyActive: number // Epoch time
   createdAt: number // Epoch time
   updatedAt: number // Epoch time
+  potentialScore?: number // Added for potential user ranking
 }
 
 export interface UserUpdateData {
@@ -23,3 +24,4 @@ export interface UserResponse {
   data?: User | User[]
   error?: string
 }
+
