@@ -1,9 +1,9 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
 import {
   Box,
   Button,
@@ -18,60 +18,80 @@ import {
   IconButton,
   Divider,
 } from "@mui/material"
-import EmailIcon from "@mui/icons-material/Email"
-import LockIcon from "@mui/icons-material/Lock"
-import Visibility from "@mui/icons-material/Visibility"
-import VisibilityOff from "@mui/icons-material/VisibilityOff"
-import { loginSchema, type LoginFormValues } from "@/lib/validations/auth"
-import { useToast } from "@/components/ToastProvider"
+import Toast from "@/components/Toast"
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [toast, setToast] = useState({ open: false, message: "", type: "success" as const })
   const router = useRouter()
-  const { showToast } = useToast()
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  })
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  }
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setError(null)
+
+    // Validate inputs
+    if (!email) {
+      setError("Email is required")
+      return
+    }
+
+    if (!validateEmail(email)) {
+      setError("Please enter a valid email address")
+      return
+    }
+
+    if (!password) {
+      setError("Password is required")
+      return
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters")
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
       // For demo purposes, accept any email/password
-      console.log("Login attempt with:", data.email)
+      console.log("Login attempt with:", email)
 
       // Store user info in localStorage
       localStorage.setItem(
         "user",
         JSON.stringify({
           uid: "user-123",
-          email: data.email,
-          displayName: data.email.split("@")[0],
+          email,
+          displayName: email.split("@")[0],
         }),
       )
       localStorage.setItem("token", "mock-token-123")
 
       // Show success toast
-      showToast("Login successful", "success")
+      setToast({
+        open: true,
+        message: "Login successful",
+        type: "success",
+      })
 
       // Navigate to dashboard
       router.push("/dashboard")
     } catch (err) {
       console.error("Auth error:", err)
       setError(err instanceof Error ? err.message : "Authentication failed")
-      showToast(err instanceof Error ? err.message : "Authentication failed", "error")
+      setToast({
+        open: true,
+        message: err instanceof Error ? err.message : "Authentication failed",
+        type: "error",
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -111,72 +131,48 @@ export default function LoginPage() {
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-            <Controller
+          <Box component="form" onSubmit={handleSubmit} noValidate>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="Email Address"
               name="email"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="email"
-                  label="Email Address"
-                  autoComplete="email"
-                  autoFocus
-                  disabled={isSubmitting}
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <EmailIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ mb: 2 }}
-                />
-              )}
+              autoComplete="email"
+              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isSubmitting}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">✉️</InputAdornment>,
+              }}
+              sx={{ mb: 2 }}
             />
 
-            <Controller
+            <TextField
+              margin="normal"
+              required
+              fullWidth
               name="password"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  margin="normal"
-                  required
-                  fullWidth
-                  label="Password"
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  autoComplete="current-password"
-                  disabled={isSubmitting}
-                  error={!!errors.password}
-                  helperText={errors.password?.message}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LockIcon color="action" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={handleClickShowPassword}
-                          edge="end"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ mb: 3 }}
-                />
-              )}
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              id="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isSubmitting}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">🔒</InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton aria-label="toggle password visibility" onClick={handleClickShowPassword} edge="end">
+                      {showPassword ? "👁️" : "👁️‍🗨️"}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 3 }}
             />
 
             <Button
@@ -216,6 +212,13 @@ export default function LoginPage() {
           </Box>
         </CardContent>
       </Card>
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+      />
     </Container>
   )
 }
