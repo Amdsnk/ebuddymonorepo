@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 
+// Add this import
+import { analytics } from "@/lib/analytics"
+
 // Define user type
 interface User {
   uid: string
@@ -39,6 +42,7 @@ export function useAuth() {
     setLoading(false)
   }, [])
 
+  // In the signIn function
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true)
     try {
@@ -81,9 +85,18 @@ export function useAuth() {
       localStorage.setItem("user", JSON.stringify(data.data.user))
       localStorage.setItem("token", data.data.token)
 
+      // Track login event
+      analytics.trackEvent("login", { email })
+
       setUser(data.data.user)
       return data.data.user
     } catch (error) {
+      // Track error event
+      analytics.trackEvent("error", {
+        context: "login",
+        message: error instanceof Error ? error.message : "Authentication failed",
+      })
+
       console.error("Sign in error:", error)
       throw error
     } finally {
@@ -143,7 +156,11 @@ export function useAuth() {
     }
   }, [])
 
+  // In the signOut function
   const signOut = useCallback(async () => {
+    // Track logout event
+    analytics.trackEvent("logout")
+
     // Clear localStorage
     localStorage.removeItem("user")
     localStorage.removeItem("token")
