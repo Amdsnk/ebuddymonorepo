@@ -1,10 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import { ThemeRegistry } from "@/theme/ThemeRegistry"
-import "./globals.css"
-
-const inter = Inter({ subsets: ["latin"] })
+import ClientLayout from "./client_layout"
 
 export const metadata: Metadata = {
   title: "EBuddy App",
@@ -16,12 +12,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <html lang="en">
-      <body className={inter.className}>
-        <ThemeRegistry>{children}</ThemeRegistry>
-      </body>
-    </html>
-  )
+  return <ClientLayout>{children}</ClientLayout>
 }
 
