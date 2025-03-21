@@ -75,4 +75,3 @@ export const fetchPotentialUsers = async (req: AuthRequest, res: NextApiResponse
     return res.status(500).json({ success: false, error: "Internal server error" })
   }
 }
-
