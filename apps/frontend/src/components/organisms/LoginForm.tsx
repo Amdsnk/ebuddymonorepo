@@ -4,18 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  TextField,
-  Typography,
-  Link as MuiLink,
-  Alert,
-  CircularProgress,
-} from "@mui/material"
-import { useAuth } from "@/hooks/useAuth"
+import { Box, Button, Card, CardContent, TextField, Typography, Link as MuiLink, Alert } from "@mui/material"
 
 export default function LoginForm() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -23,8 +12,6 @@ export default function LoginForm() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const { signIn, signUp } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,11 +20,14 @@ export default function LoginForm() {
     setIsSubmitting(true)
 
     try {
-      if (isSignUp) {
-        await signUp(email, password)
-      } else {
-        await signIn(email, password)
-      }
+      // Simplified login for testing
+      console.log("Login attempt with:", email, password)
+
+      // Mock successful login
+      localStorage.setItem("user", JSON.stringify({ email }))
+      localStorage.setItem("token", "mock-token")
+
+      // Navigate to dashboard
       router.push("/dashboard")
     } catch (err) {
       console.error("Auth error:", err)
@@ -89,7 +79,7 @@ export default function LoginForm() {
           />
 
           <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }} disabled={isSubmitting}>
-            {isSubmitting ? <CircularProgress size={24} /> : isSignUp ? "Sign Up" : "Sign In"}
+            {isSubmitting ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
           </Button>
 
           <Box sx={{ textAlign: "center" }}>
