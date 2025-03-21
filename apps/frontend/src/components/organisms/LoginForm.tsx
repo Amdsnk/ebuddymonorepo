@@ -16,7 +16,6 @@ import {
   CircularProgress,
 } from "@mui/material"
 import { useAuth } from "@/hooks/useAuth"
-import { useFirebaseAuth } from "@/hooks/useFirebaseAuth"
 
 export default function LoginForm() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -24,10 +23,8 @@ export default function LoginForm() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [useFirebase, setUseFirebase] = useState(false)
 
   const { signIn, signUp } = useAuth()
-  const firebaseAuth = useFirebaseAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,20 +33,10 @@ export default function LoginForm() {
     setIsSubmitting(true)
 
     try {
-      if (useFirebase) {
-        // Use Firebase Auth directly
-        if (isSignUp) {
-          await firebaseAuth.signUp(email, password)
-        } else {
-          await firebaseAuth.signIn(email, password)
-        }
+      if (isSignUp) {
+        await signUp(email, password)
       } else {
-        // Use our custom auth API
-        if (isSignUp) {
-          await signUp(email, password)
-        } else {
-          await signIn(email, password)
-        }
+        await signIn(email, password)
       }
       router.push("/dashboard")
     } catch (err) {
@@ -105,7 +92,7 @@ export default function LoginForm() {
             {isSubmitting ? <CircularProgress size={24} /> : isSignUp ? "Sign Up" : "Sign In"}
           </Button>
 
-          <Box sx={{ textAlign: "center", mb: 2 }}>
+          <Box sx={{ textAlign: "center" }}>
             <MuiLink
               component="button"
               variant="body2"
@@ -113,19 +100,6 @@ export default function LoginForm() {
               sx={{ cursor: "pointer" }}
             >
               {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
-            </MuiLink>
-          </Box>
-
-          <Box sx={{ textAlign: "center" }}>
-            <MuiLink
-              component="button"
-              variant="body2"
-              onClick={() => setUseFirebase(!useFirebase)}
-              sx={{ cursor: "pointer", color: useFirebase ? "primary.main" : "text.secondary" }}
-            >
-              {useFirebase
-                ? "Using Firebase Auth (click to switch)"
-                : "Using Custom Auth (click to switch to Firebase)"}
             </MuiLink>
           </Box>
         </Box>
