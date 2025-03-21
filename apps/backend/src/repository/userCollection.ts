@@ -140,4 +140,3 @@ export const getPotentialUsers = async (limit = 10, lastScore?: number, lastId?:
     throw error
   }
 }
-
