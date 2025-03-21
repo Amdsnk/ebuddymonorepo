@@ -14,7 +14,9 @@ export default function UpdateButton({ userId, ...props }: UpdateButtonProps) {
   const { loading } = useAppSelector((state) => state.user)
 
   const handleClick = useCallback(() => {
-    dispatch(fetchUserData(userId))
+    if (userId) {
+      dispatch(fetchUserData(userId))
+    }
   }, [dispatch, userId])
 
   return (
