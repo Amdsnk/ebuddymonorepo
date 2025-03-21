@@ -1,3 +1,9 @@
-import type { User, UserUpdateData } from "@ebuddy/shared"
+import type { User as SharedUser, UserUpdateData } from "@ebuddy/shared"
 
-export type { User, UserUpdateData }
+// Extend the shared User type to include potentialScore
+export interface User extends SharedUser {
+  potentialScore: number
+}
+
+export type { UserUpdateData }
+
