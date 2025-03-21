@@ -1,8 +1,6 @@
-"use client"
+import { redirect } from "next/navigation"
 
-import UpdateButton from "../apps/frontend/src/components/atoms/UpdateButton"
-
-export default function SyntheticV0PageForDeployment() {
-  return <UpdateButton />
+export default function Home() {
+  redirect("/login")
 }
 
