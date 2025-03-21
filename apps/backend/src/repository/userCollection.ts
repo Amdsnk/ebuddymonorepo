@@ -42,6 +42,8 @@ export const updateUser = async (userId: string, userData: UserUpdateData): Prom
     const updateData = {
       ...userData,
       updatedAt: Date.now(),
+      // Always update recentlyActive when user data is updated
+      recentlyActive: Date.now(),
     }
 
     await db.collection(USERS_COLLECTION).doc(userId).update(updateData)
@@ -140,3 +142,4 @@ export const getPotentialUsers = async (limit = 10, lastScore?: number, lastId?:
     throw error
   }
 }
+
