@@ -41,7 +41,13 @@ export function useAuth() {
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true)
     try {
-      const response = await fetch("/api/auth/login", {
+      // Get the API URL from environment variable or use default
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
+      const loginUrl = `${apiUrl}/api/auth/login`
+
+      console.log("Signing in with:", loginUrl)
+
+      const response = await fetch(loginUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -49,7 +55,23 @@ export function useAuth() {
         body: JSON.stringify({ email, password }),
       })
 
-      const data: AuthResponse = await response.json()
+      // Check if response is ok
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("Login failed with status:", response.status, errorText)
+        throw new Error(`Login failed: ${response.status} ${errorText}`)
+      }
+
+      // Try to parse JSON
+      let data: AuthResponse
+      try {
+        data = await response.json()
+      } catch (error) {
+        console.error("Failed to parse JSON response:", error)
+        const responseText = await response.text()
+        console.error("Response text:", responseText)
+        throw new Error("Invalid response from server")
+      }
 
       if (!data.success || !data.data) {
         throw new Error(data.error || "Authentication failed")
@@ -61,6 +83,9 @@ export function useAuth() {
 
       setUser(data.data.user)
       return data.data.user
+    } catch (error) {
+      console.error("Sign in error:", error)
+      throw error
     } finally {
       setLoading(false)
     }
@@ -69,7 +94,13 @@ export function useAuth() {
   const signUp = useCallback(async (email: string, password: string) => {
     setLoading(true)
     try {
-      const response = await fetch("/api/auth/signup", {
+      // Get the API URL from environment variable or use default
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
+      const signupUrl = `${apiUrl}/api/auth/signup`
+
+      console.log("Signing up with:", signupUrl)
+
+      const response = await fetch(signupUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -77,7 +108,23 @@ export function useAuth() {
         body: JSON.stringify({ email, password }),
       })
 
-      const data: AuthResponse = await response.json()
+      // Check if response is ok
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("Signup failed with status:", response.status, errorText)
+        throw new Error(`Signup failed: ${response.status} ${errorText}`)
+      }
+
+      // Try to parse JSON
+      let data: AuthResponse
+      try {
+        data = await response.json()
+      } catch (error) {
+        console.error("Failed to parse JSON response:", error)
+        const responseText = await response.text()
+        console.error("Response text:", responseText)
+        throw new Error("Invalid response from server")
+      }
 
       if (!data.success || !data.data) {
         throw new Error(data.error || "Registration failed")
@@ -89,6 +136,9 @@ export function useAuth() {
 
       setUser(data.data.user)
       return data.data.user
+    } catch (error) {
+      console.error("Sign up error:", error)
+      throw error
     } finally {
       setLoading(false)
     }
