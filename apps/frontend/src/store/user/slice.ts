@@ -56,4 +56,3 @@ const userSlice = createSlice({
 
 export const { clearUserData } = userSlice.actions
 export default userSlice.reducer
-
