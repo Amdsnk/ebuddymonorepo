@@ -23,4 +23,3 @@ export interface UserResponse {
   data?: User | User[]
   error?: string
 }
-
