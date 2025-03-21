@@ -75,3 +75,4 @@ export async function fetchPotentialUsers(limit = 10, lastScore?: number, lastId
 
   return data.data as User[]
 }
+
