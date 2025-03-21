@@ -1,11 +1,12 @@
-import type { Request, Response } from "express"
+import type { NextApiResponse } from "next"
 import type { AuthRequest } from "../middleware/authMiddleware"
 import { getUserById, getAllUsers, updateUser, getPotentialUsers } from "../repository/userCollection"
 import type { UserUpdateData } from "../entities/user"
 
-export const fetchUserData = async (req: AuthRequest, res: Response) => {
+export const fetchUserData = async (req: AuthRequest, res: NextApiResponse) => {
   try {
-    const userId = req.params.userId || req.user?.uid
+    // In Next.js API routes, params are in query for GET requests
+    const userId = (req.query.userId as string) || req.user?.uid
 
     if (!userId) {
       return res.status(400).json({ success: false, error: "User ID is required" })
@@ -24,7 +25,7 @@ export const fetchUserData = async (req: AuthRequest, res: Response) => {
   }
 }
 
-export const fetchAllUsers = async (req: Request, res: Response) => {
+export const fetchAllUsers = async (req: AuthRequest, res: NextApiResponse) => {
   try {
     const limit = Number.parseInt(req.query.limit as string) || 10
     const startAfter = req.query.startAfter as string
@@ -38,9 +39,9 @@ export const fetchAllUsers = async (req: Request, res: Response) => {
   }
 }
 
-export const updateUserData = async (req: AuthRequest, res: Response) => {
+export const updateUserData = async (req: AuthRequest, res: NextApiResponse) => {
   try {
-    const userId = req.params.userId || req.user?.uid
+    const userId = (req.query.userId as string) || req.user?.uid
 
     if (!userId) {
       return res.status(400).json({ success: false, error: "User ID is required" })
@@ -60,7 +61,7 @@ export const updateUserData = async (req: AuthRequest, res: Response) => {
   }
 }
 
-export const fetchPotentialUsers = async (req: Request, res: Response) => {
+export const fetchPotentialUsers = async (req: AuthRequest, res: NextApiResponse) => {
   try {
     const limit = Number.parseInt(req.query.limit as string) || 10
     const lastScore = req.query.lastScore ? Number.parseFloat(req.query.lastScore as string) : undefined
@@ -74,4 +75,3 @@ export const fetchPotentialUsers = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, error: "Internal server error" })
   }
 }
-
