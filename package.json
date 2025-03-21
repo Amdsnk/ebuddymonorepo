@@ -1,18 +1,15 @@
 {
-  "name": "ebuddy-monorepo",
+  "name": "my-v0-project",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "yarn@1.22.19",
-  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "start": "turbo run start",
-    "lint": "turbo run lint",
-    "clean": "turbo run clean"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.9.1",
+    "@hookform/resolvers": "^3.3.2",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.4",
     "@radix-ui/react-aspect-ratio": "^1.1.1",
@@ -40,6 +37,10 @@
     "@radix-ui/react-toggle": "^1.1.1",
     "@radix-ui/react-toggle-group": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.6",
+    "@mui/icons-material": "^5.15.0",
+    "react-error-boundary": "^4.0.11",
+    "@tanstack/react-query": "^5.8.4",
+    "@tanstack/react-query-devtools": "^5.8.4",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -50,29 +51,17 @@
     "lucide-react": "^0.454.0",
     "next": "14.2.16",
     "next-themes": "^0.4.4",
-    "react": "^18",
+    "react": "^19",
     "react-day-picker": "8.10.1",
-    "react-dom": "^18",
-    "react-hook-form": "^7.54.1",
+    "react-dom": "^19",
+    "react-hook-form": "^7.48.2",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.0",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
-    "zod": "^3.24.1",
-    "firebase-admin": "latest",
-    "@emotion/react": "latest",
-    "@emotion/styled": "latest",
-    "@mui/material-pigment-css": "latest",
-    "redux": "latest",
-    "react-redux": "latest",
-    "firebase-functions": "latest",
-    "express": "latest",
-    "cors": "latest",
-    "@mui/material": "latest",
-    "firebase": "latest",
-    "@reduxjs/toolkit": "latest"
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^22",
@@ -80,8 +69,7 @@
     "@types/react-dom": "^18",
     "postcss": "^8",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5",
-    "turbo": "latest"
+    "typescript": "^5"
   }
 }
 
