@@ -13,6 +13,15 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Add this to ensure proper loading of MUI styles
+  modularizeImports: {
+    "@mui/material": {
+      transform: "@mui/material/{{member}}",
+    },
+    "@mui/icons-material": {
+      transform: "@mui/icons-material/{{member}}",
+    },
+  },
 }
 
 module.exports = nextConfig
