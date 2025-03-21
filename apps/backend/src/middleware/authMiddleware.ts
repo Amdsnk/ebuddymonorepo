@@ -34,4 +34,3 @@ export const authMiddleware = async (req: AuthRequest, res: NextApiResponse): Pr
     res.status(500).json({ success: false, error: "Internal server error" })
   }
 }
-
