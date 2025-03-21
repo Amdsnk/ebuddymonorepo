@@ -1,5 +1,0 @@
-{
-  "version": 2,
-  "buildCommand": "cd packages/shared && yarn build && cd ../../apps/backend && yarn build",
-  "outputDirectory": "apps/backend/.next"
-}
