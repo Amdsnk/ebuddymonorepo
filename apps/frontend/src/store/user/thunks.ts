@@ -23,4 +23,3 @@ export const updateUserData = createAsyncThunk<User, { data: UserUpdateData; use
     }
   },
 )
-
