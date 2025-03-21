@@ -5,6 +5,7 @@ export interface AuthRequest extends NextApiRequest {
   user?: {
     uid: string
     email: string
+    role?: string // Added role property
   }
 }
 
@@ -25,6 +26,8 @@ export const authMiddleware = async (req: AuthRequest, res: NextApiResponse): Pr
       req.user = {
         uid: decodedToken.uid,
         email: decodedToken.email || "",
+        // You can add custom claims for role if you have them in your Firebase Auth
+        role: decodedToken.role || decodedToken.claims?.role || "user"
       }
       // Continue to the next middleware/handler
     } catch (error) {
@@ -35,4 +38,3 @@ export const authMiddleware = async (req: AuthRequest, res: NextApiResponse): Pr
     res.status(500).json({ success: false, error: "Internal server error" })
   }
 }
-
