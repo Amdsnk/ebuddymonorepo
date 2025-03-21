@@ -4,20 +4,13 @@ import type { User, UserResponse, UserUpdateData } from "@ebuddy/shared"
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api"
 
 async function getAuthToken(): Promise<string> {
-  try {
-    const { getAuth } = await import("firebase/auth")
-    const auth = getAuth()
-    const user = auth.currentUser
+  const token = localStorage.getItem("token")
 
-    if (!user) {
-      throw new Error("User not authenticated")
-    }
-
-    return user.getIdToken()
-  } catch (error) {
-    console.error("Error getting auth token:", error)
-    throw error
+  if (!token) {
+    throw new Error("User not authenticated")
   }
+
+  return token
 }
 
 async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
