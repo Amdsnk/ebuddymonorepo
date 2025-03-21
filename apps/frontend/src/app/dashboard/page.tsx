@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Box, CircularProgress, Container } from "@mui/material"
 import Dashboard from "@/components/pages/Dashboard"
 import { useAuth } from "@/hooks/useAuth"
+import NoSSR from "@/components/NoSSR"
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
@@ -33,7 +34,10 @@ export default function DashboardPage() {
 
   return (
     <Box sx={{ minHeight: "100vh" }}>
-      <Dashboard />
+      <NoSSR>
+        <Dashboard />
+      </NoSSR>
     </Box>
   )
 }
+
