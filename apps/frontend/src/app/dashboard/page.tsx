@@ -2,15 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { User, LogOut, Star, Package, Calendar, RefreshCw, ChevronLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Progress } from "@/components/ui/progress"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface UserData {
   id: string
@@ -46,52 +37,12 @@ export default function DashboardPage() {
       const parsedUser = JSON.parse(storedUser)
       setUser(parsedUser)
 
-      // Fetch user data or create mock data
-      fetchUserData(parsedUser.uid)
-    } catch (error) {
-      console.error("Failed to parse user data:", error)
-      router.push("/login")
-    } finally {
-      setLoading(false)
-    }
-  }, [router])
-
-  const fetchUserData = async (userId: string) => {
-    setRefreshing(true)
-    setError(null)
-
-    try {
-      // Try to fetch from API first
-      const token = localStorage.getItem("token")
-
-      if (token) {
-        try {
-          const response = await fetch(`/api/user/${userId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          })
-
-          if (response.ok) {
-            const data = await response.json()
-            if (data.success && data.data) {
-              setUserData(data.data)
-              setRefreshing(false)
-              return
-            }
-          }
-        } catch (apiError) {
-          console.error("API error:", apiError)
-          // Fall back to mock data
-        }
-      }
-
-      // Create mock user data as fallback
+      // Create mock user data
       const mockUserData: UserData = {
-        id: userId,
-        email: user?.email || "user@example.com",
-        displayName: user?.displayName || user?.email?.split("@")[0] || "User",
-        photoURL: user?.photoURL || null,
+        id: parsedUser.uid,
+        email: parsedUser.email,
+        displayName: parsedUser.displayName || parsedUser.email.split("@")[0],
+        photoURL: null,
         totalAverageWeightRatings: 4.5,
         numberOfRents: 12,
         recentlyActive: Date.now() - 86400000, // 1 day ago
@@ -101,12 +52,12 @@ export default function DashboardPage() {
 
       setUserData(mockUserData)
     } catch (error) {
-      console.error("Error fetching user data:", error)
-      setError("Failed to load user data. Please try again.")
+      console.error("Failed to parse user data:", error)
+      router.push("/login")
     } finally {
-      setRefreshing(false)
+      setLoading(false)
     }
-  }
+  }, [router])
 
   const handleLogout = () => {
     localStorage.removeItem("user")
@@ -122,21 +73,37 @@ export default function DashboardPage() {
     })
   }
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2)
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-2">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="text-muted-foreground">Loading your dashboard...</p>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#f5f5f5",
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <div
+            style={{
+              display: "inline-block",
+              width: "40px",
+              height: "40px",
+              border: "4px solid rgba(0, 0, 0, 0.1)",
+              borderTopColor: "#2563EB",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              marginBottom: "16px",
+            }}
+          ></div>
+          <p style={{ color: "#6B7280" }}>Loading your dashboard...</p>
+          <style jsx>{`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
       </div>
     )
@@ -146,222 +113,223 @@ export default function DashboardPage() {
     return null
   }
 
-  // Calculate days since last active
-  const daysSinceActive = Math.floor((Date.now() - userData.recentlyActive) / (1000 * 60 * 60 * 24))
-
-  // Calculate activity score (0-100)
-  const activityScore = Math.max(0, 100 - daysSinceActive * 5)
-
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild>
-              <a href="/">
-                <ChevronLeft className="h-5 w-5" />
-                <span className="sr-only">Back</span>
-              </a>
-            </Button>
-            <h1 className="text-xl font-semibold">EBuddy Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button variant="outline" size="sm" onClick={handleLogout} className="gap-1">
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
-          </div>
-        </div>
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#f5f5f5",
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      <header
+        style={{
+          backgroundColor: "white",
+          padding: "16px 24px",
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h1 style={{ fontSize: "20px", fontWeight: "600", margin: 0 }}>EBuddy Dashboard</h1>
+        <button
+          onClick={handleLogout}
+          style={{
+            backgroundColor: "#EF4444",
+            color: "white",
+            border: "none",
+            padding: "8px 16px",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontSize: "14px",
+          }}
+        >
+          Logout
+        </button>
       </header>
 
-      <main className="container py-6 md:py-10">
+      <main style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
         {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+          <div
+            style={{
+              marginBottom: "24px",
+              padding: "12px 16px",
+              backgroundColor: "#FEE2E2",
+              color: "#DC2626",
+              borderRadius: "4px",
+            }}
+          >
+            {error}
+          </div>
         )}
 
-        <div className="grid gap-6 md:grid-cols-[1fr_250px]">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle>User Profile</CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fetchUserData(userData.id)}
-                    disabled={refreshing}
-                    className="h-8 gap-1"
-                  >
-                    <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-                    <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
-                  </Button>
-                </div>
-                <CardDescription>View and manage your account information</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row gap-6 items-start">
-                  <Avatar className="h-24 w-24 border">
-                    <AvatarImage src={userData.photoURL || undefined} alt={userData.displayName || "User"} />
-                    <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                      {getInitials(userData.displayName || userData.email.split("@")[0])}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="space-y-4 flex-1">
-                    <div>
-                      <h3 className="text-2xl font-semibold">{userData.displayName || userData.email.split("@")[0]}</h3>
-                      <p className="text-muted-foreground">{userData.email}</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center text-muted-foreground text-sm">
-                          <Star className="mr-1 h-4 w-4" />
-                          <span>Rating</span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-2xl font-semibold mr-2">
-                            {userData.totalAverageWeightRatings.toFixed(1)}
-                          </span>
-                          <div className="flex text-amber-400">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < Math.floor(userData.totalAverageWeightRatings) ? "fill-current" : "fill-none"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex items-center text-muted-foreground text-sm">
-                          <Package className="mr-1 h-4 w-4" />
-                          <span>Rentals</span>
-                        </div>
-                        <p className="text-2xl font-semibold">{userData.numberOfRents}</p>
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex items-center text-muted-foreground text-sm">
-                          <Calendar className="mr-1 h-4 w-4" />
-                          <span>Last Active</span>
-                        </div>
-                        <p className="text-2xl font-semibold">{formatDate(userData.recentlyActive)}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Activity Overview</CardTitle>
-                <CardDescription>Your recent activity and engagement metrics</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Activity Score</span>
-                    <span className="text-sm font-medium">{activityScore}%</span>
-                  </div>
-                  <Progress value={activityScore} className="h-2" />
-                  <p className="text-xs text-muted-foreground">
-                    {daysSinceActive === 0
-                      ? "Active today"
-                      : daysSinceActive === 1
-                        ? "Last active yesterday"
-                        : `Last active ${daysSinceActive} days ago`}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Rental History</h4>
-                    <div className="bg-muted p-4 rounded-lg">
-                      <div className="text-3xl font-bold">{userData.numberOfRents}</div>
-                      <p className="text-xs text-muted-foreground">Total rentals completed</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Average Rating</h4>
-                    <div className="bg-muted p-4 rounded-lg">
-                      <div className="text-3xl font-bold">{userData.totalAverageWeightRatings.toFixed(1)}</div>
-                      <div className="flex text-amber-400 mt-1">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-3 w-3 ${
-                              i < Math.floor(userData.totalAverageWeightRatings) ? "fill-current" : "fill-none"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "8px",
+            padding: "24px",
+            marginBottom: "24px",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <h2 style={{ fontSize: "18px", fontWeight: "600", margin: 0 }}>Welcome, {userData.displayName}</h2>
+            <button
+              onClick={() => {
+                setRefreshing(true)
+                setTimeout(() => {
+                  setRefreshing(false)
+                }, 1000)
+              }}
+              disabled={refreshing}
+              style={{
+                backgroundColor: "#2563EB",
+                color: "white",
+                border: "none",
+                padding: "8px 16px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "14px",
+                opacity: refreshing ? 0.7 : 1,
+              }}
+            >
+              {refreshing ? "Refreshing..." : "Refresh Data"}
+            </button>
           </div>
 
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">User ID</p>
-                  <p className="text-sm font-medium break-all">{userData.id}</p>
-                </div>
-                <Separator />
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="text-sm font-medium">{userData.email}</p>
-                </div>
-                <Separator />
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Account Created</p>
-                  <p className="text-sm font-medium">{formatDate(userData.createdAt)}</p>
-                </div>
-                <Separator />
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Last Updated</p>
-                  <p className="text-sm font-medium">{formatDate(userData.updatedAt)}</p>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Badge variant="outline" className="w-full justify-center py-1.5">
-                  {userData.numberOfRents > 10 ? "Premium Member" : "Standard Member"}
-                </Badge>
-              </CardFooter>
-            </Card>
+          <p style={{ color: "#6B7280", marginBottom: "24px" }}>
+            This is your dashboard where you can view and update your information.
+          </p>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button className="w-full justify-start" variant="outline">
-                  <User className="mr-2 h-4 w-4" />
-                  Edit Profile
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <Package className="mr-2 h-4 w-4" />
-                  View Rentals
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <Star className="mr-2 h-4 w-4" />
-                  My Reviews
-                </Button>
-              </CardContent>
-            </Card>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              backgroundColor: "#F9FAFB",
+              padding: "16px",
+              borderRadius: "8px",
+            }}
+          >
+            <div>
+              <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Email</p>
+              <p style={{ fontSize: "16px", fontWeight: "500", margin: 0 }}>{userData.email}</p>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              <div
+                style={{
+                  backgroundColor: "white",
+                  padding: "16px",
+                  borderRadius: "8px",
+                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                }}
+              >
+                <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Rating</p>
+                <p style={{ fontSize: "24px", fontWeight: "600", margin: "0 0 4px 0" }}>
+                  {userData.totalAverageWeightRatings.toFixed(1)}
+                </p>
+                <div style={{ display: "flex" }}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        color: i < Math.floor(userData.totalAverageWeightRatings) ? "#F59E0B" : "#D1D5DB",
+                        fontSize: "16px",
+                      }}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  backgroundColor: "white",
+                  padding: "16px",
+                  borderRadius: "8px",
+                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                }}
+              >
+                <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Number of Rents</p>
+                <p style={{ fontSize: "24px", fontWeight: "600", margin: 0 }}>{userData.numberOfRents}</p>
+              </div>
+
+              <div
+                style={{
+                  backgroundColor: "white",
+                  padding: "16px",
+                  borderRadius: "8px",
+                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                }}
+              >
+                <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Last Active</p>
+                <p style={{ fontSize: "24px", fontWeight: "600", margin: 0 }}>{formatDate(userData.recentlyActive)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "8px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <h2 style={{ fontSize: "18px", fontWeight: "600", marginTop: 0, marginBottom: "16px" }}>Account Details</h2>
+
+          <div style={{ display: "grid", gap: "16px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "8px 0",
+                borderBottom: "1px solid #E5E7EB",
+              }}
+            >
+              <span style={{ color: "#6B7280" }}>User ID</span>
+              <span style={{ fontWeight: "500" }}>{userData.id}</span>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "8px 0",
+                borderBottom: "1px solid #E5E7EB",
+              }}
+            >
+              <span style={{ color: "#6B7280" }}>Created</span>
+              <span style={{ fontWeight: "500" }}>{formatDate(userData.createdAt)}</span>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "8px 0",
+                borderBottom: "1px solid #E5E7EB",
+              }}
+            >
+              <span style={{ color: "#6B7280" }}>Last Updated</span>
+              <span style={{ fontWeight: "500" }}>{formatDate(userData.updatedAt)}</span>
+            </div>
           </div>
         </div>
       </main>
