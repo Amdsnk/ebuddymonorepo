@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Box, Container, Typography, Paper, AppBar, Toolbar, Button, Grid, CircularProgress } from "@mui/material"
 import UpdateButton from "@/components/atoms/UpdateButton"
 import UserCard from "@/components/molecules/UserCard"
@@ -11,11 +11,21 @@ import { fetchUserData } from "@/store/user/thunks"
 export default function Dashboard() {
   const { user, signOut } = useAuth()
   const dispatch = useAppDispatch()
-  const { data: userData, loading, error } = useAppSelector((state) => state.user)
 
+  // Use local state as a fallback during SSR
+  const [localLoading, setLocalLoading] = useState(false)
+
+  // Safely use Redux state with fallbacks
+  const reduxState = useAppSelector((state) => state.user)
+  const userData = reduxState.data || null
+  const loading = reduxState.loading || localLoading
+  const error = reduxState.error || null
+
+  // Only fetch data on the client side
   useEffect(() => {
-    if (user?.uid) {
-      dispatch(fetchUserData(user.uid))
+    if (typeof window !== "undefined" && user?.uid) {
+      setLocalLoading(true)
+      dispatch(fetchUserData(user.uid)).finally(() => setLocalLoading(false))
     }
   }, [dispatch, user?.uid])
 
