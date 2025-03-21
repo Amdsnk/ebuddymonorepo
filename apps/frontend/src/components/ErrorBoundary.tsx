@@ -1,6 +1,8 @@
 "use client"
 
 import { Component, type ErrorInfo, type ReactNode } from "react"
+import ErrorFallback from "./ErrorFallback"
+import { analytics } from "@/utils/analytics"
 
 interface Props {
   children: ReactNode
@@ -23,40 +25,21 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error("Error caught by ErrorBoundary:", error, errorInfo)
+
+    // Track error in analytics
+    analytics.trackEvent("error", {
+      context: "error_boundary",
+      message: error.message,
+    })
+  }
+
+  resetErrorBoundary = () => {
+    this.setState({ hasError: false, error: null })
   }
 
   render() {
     if (this.state.hasError) {
-      return (
-        <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-          <h1>Something went wrong</h1>
-          <p>An error occurred while rendering this page.</p>
-          <pre
-            style={{
-              backgroundColor: "#f5f5f5",
-              padding: "10px",
-              borderRadius: "4px",
-              overflow: "auto",
-            }}
-          >
-            {this.state.error?.toString()}
-          </pre>
-          <button
-            onClick={() => this.setState({ hasError: false, error: null })}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: "#1976d2",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              marginTop: "10px",
-            }}
-          >
-            Try again
-          </button>
-        </div>
-      )
+      return <ErrorFallback error={this.state.error as Error} resetErrorBoundary={this.resetErrorBoundary} />
     }
 
     return this.props.children
