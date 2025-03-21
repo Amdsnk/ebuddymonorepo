@@ -1,167 +1,41 @@
-"use client"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log("Login API called with method:", req.method)
 
-// Define user type
-interface User {
-  uid: string
-  email: string | null
-  displayName: string | null
-  photoURL: string | null
-}
-
-// Define auth response type
-interface AuthResponse {
-  success: boolean
-  data?: {
-    token: string
-    user: User
+  if (req.method !== "POST") {
+    return res.status(405).json({ success: false, error: `Method ${req.method} Not Allowed` })
   }
-  error?: string
-}
 
-export function useAuth() {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  try {
+    const { email, password } = req.body
+    console.log("Login attempt with email:", email)
 
-  // Check for user in localStorage on mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user")
-    const storedToken = localStorage.getItem("token")
-
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser))
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: "Email and password are required" })
     }
 
-    setLoading(false)
-  }, [])
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    setLoading(true)
-    try {
-      // Get the API URL from environment variable or use default
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
-      const loginUrl = `${apiUrl}/api/auth/login`
-
-      console.log("Signing in with:", loginUrl)
-
-      const response = await fetch(loginUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    // This is a mock implementation for testing
+    // In a real app, you would validate credentials against a database
+    if (email === "test@example.com" && password === "password") {
+      return res.status(200).json({
+        success: true,
+        data: {
+          token: "mock-token-123",
+          user: {
+            uid: "user-123",
+            email: email,
+            displayName: "Test User",
+            photoURL: null,
+          },
         },
-        body: JSON.stringify({ email, password }),
       })
-
-      // Check if response is ok
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error("Login failed with status:", response.status, errorText)
-        throw new Error(`Login failed: ${response.status} ${errorText}`)
-      }
-
-      // Try to parse JSON
-      let data: AuthResponse
-      try {
-        data = await response.json()
-      } catch (error) {
-        console.error("Failed to parse JSON response:", error)
-        const responseText = await response.text()
-        console.error("Response text:", responseText)
-        throw new Error("Invalid response from server")
-      }
-
-      if (!data.success || !data.data) {
-        throw new Error(data.error || "Authentication failed")
-      }
-
-      // Store user and token in localStorage
-      localStorage.setItem("user", JSON.stringify(data.data.user))
-      localStorage.setItem("token", data.data.token)
-
-      setUser(data.data.user)
-      return data.data.user
-    } catch (error) {
-      console.error("Sign in error:", error)
-      throw error
-    } finally {
-      setLoading(false)
+    } else {
+      return res.status(401).json({ success: false, error: "Invalid credentials" })
     }
-  }, [])
-
-  const signUp = useCallback(async (email: string, password: string) => {
-    setLoading(true)
-    try {
-      // Get the API URL from environment variable or use default
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
-      const signupUrl = `${apiUrl}/api/auth/signup`
-
-      console.log("Signing up with:", signupUrl)
-
-      const response = await fetch(signupUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      // Check if response is ok
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error("Signup failed with status:", response.status, errorText)
-        throw new Error(`Signup failed: ${response.status} ${errorText}`)
-      }
-
-      // Try to parse JSON
-      let data: AuthResponse
-      try {
-        data = await response.json()
-      } catch (error) {
-        console.error("Failed to parse JSON response:", error)
-        const responseText = await response.text()
-        console.error("Response text:", responseText)
-        throw new Error("Invalid response from server")
-      }
-
-      if (!data.success || !data.data) {
-        throw new Error(data.error || "Registration failed")
-      }
-
-      // Store user and token in localStorage
-      localStorage.setItem("user", JSON.stringify(data.data.user))
-      localStorage.setItem("token", data.data.token)
-
-      setUser(data.data.user)
-      return data.data.user
-    } catch (error) {
-      console.error("Sign up error:", error)
-      throw error
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  const signOut = useCallback(async () => {
-    // Clear localStorage
-    localStorage.removeItem("user")
-    localStorage.removeItem("token")
-
-    // Clear user state
-    setUser(null)
-
-    // Redirect to login page
-    router.push("/login")
-  }, [router])
-
-  return {
-    user,
-    loading,
-    signIn,
-    signUp,
-    signOut,
+  } catch (error) {
+    console.error("Login error:", error)
+    return res.status(500).json({ success: false, error: "Authentication failed" })
   }
 }
 
