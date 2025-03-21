@@ -1,22 +1,9 @@
-import dynamic from "next/dynamic"
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
-// Import the login form with no SSR
-const LoginForm = dynamic(() => import("@/components/organisms/LoginForm"), { ssr: false })
+import LoginClient from "./login-client"
 
 export default function LoginPage() {
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "16px",
-      }}
-    >
-      <LoginForm />
-    </div>
-  )
+  return <LoginClient />
 }
 
