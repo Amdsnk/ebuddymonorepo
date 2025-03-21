@@ -1,0 +1,6 @@
+{
+  "rewrites": [{ "source": "/api/:path*", "destination": "/api/:path*" }],
+  "buildCommand": "cd ../.. && turbo run build --filter=@ebuddy/backend",
+  "outputDirectory": ".next"
+}
+
