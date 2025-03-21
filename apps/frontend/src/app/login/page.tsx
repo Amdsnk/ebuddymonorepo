@@ -61,16 +61,69 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md">
-        <div className="bg-white p-8 rounded-md shadow-sm">
-          <h1 className="text-2xl font-normal text-center mb-6">Sign In</h1>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#f5f5f5",
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "400px",
+          padding: "0 20px",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "8px",
+            padding: "32px",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "24px",
+              fontWeight: "normal",
+              textAlign: "center",
+              marginBottom: "24px",
+            }}
+          >
+            Sign In
+          </h1>
 
-          {error && <div className="mb-4 p-2 bg-red-50 text-red-600 text-sm rounded">{error}</div>}
+          {error && (
+            <div
+              style={{
+                marginBottom: "16px",
+                padding: "8px 12px",
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                borderRadius: "4px",
+                fontSize: "14px",
+              }}
+            >
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-blue-600 mb-1">
+            <div style={{ marginBottom: "16px" }}>
+              <label
+                htmlFor="email"
+                style={{
+                  display: "block",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  marginBottom: "4px",
+                  color: "#2563EB",
+                }}
+              >
                 Email Address *
               </label>
               <input
@@ -78,13 +131,28 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #D1D5DB",
+                  borderRadius: "4px",
+                  fontSize: "16px",
+                }}
                 disabled={isSubmitting}
               />
             </div>
 
-            <div className="mb-6">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <div style={{ marginBottom: "24px" }}>
+              <label
+                htmlFor="password"
+                style={{
+                  display: "block",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  marginBottom: "4px",
+                  color: "#4B5563",
+                }}
+              >
                 Password *
               </label>
               <input
@@ -92,7 +160,13 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #D1D5DB",
+                  borderRadius: "4px",
+                  fontSize: "16px",
+                }}
                 disabled={isSubmitting}
               />
             </div>
@@ -100,25 +174,34 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              style={{
+                width: "100%",
+                backgroundColor: "#2563EB",
+                color: "white",
+                padding: "10px 16px",
+                border: "none",
+                borderRadius: "4px",
+                fontSize: "16px",
+                cursor: "pointer",
+              }}
             >
               {isSubmitting ? "Signing In..." : "Sign In"}
             </button>
           </form>
 
-          <div className="mt-4 text-center">
-            <Link href="#" className="text-sm text-blue-600 hover:text-blue-800">
+          <div style={{ marginTop: "16px", textAlign: "center" }}>
+            <Link
+              href="#"
+              style={{
+                fontSize: "14px",
+                color: "#2563EB",
+                textDecoration: "none",
+              }}
+            >
               Don't have an account? Sign up
             </Link>
           </div>
         </div>
-
-        {/* Demo mode notice - only visible in development */}
-        {process.env.NODE_ENV === "development" && (
-          <div className="mt-4 text-center text-xs text-gray-500">
-            <p>Demo Mode: Use any email and password (minimum 6 characters)</p>
-          </div>
-        )}
       </div>
     </div>
   )
