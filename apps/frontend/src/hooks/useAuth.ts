@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 
-// Define user type without importing from Firebase
+// Define user type
 interface User {
   uid: string
   email: string | null
