@@ -2,12 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@ebuddy/shared"],
-  // Add this to prevent static generation of problematic pages
-  experimental: {
-    // This ensures pages with Redux are rendered on-demand, not at build time
-    workerThreads: false,
-    cpus: 1,
-  },
+  // Disable static generation completely
+  output: "standalone",
+  // Disable static optimization
+  staticPageGenerationTimeout: 0,
 }
 
 module.exports = nextConfig
