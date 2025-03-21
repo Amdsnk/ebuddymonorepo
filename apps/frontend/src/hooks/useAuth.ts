@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-
-// Add this import
-import { analytics } from "@/lib/analytics"
+import { analytics } from "@/utils/analytics"
 
 // Define user type
 interface User {
@@ -42,7 +40,6 @@ export function useAuth() {
     setLoading(false)
   }, [])
 
-  // In the signIn function
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true)
     try {
@@ -156,7 +153,6 @@ export function useAuth() {
     }
   }, [])
 
-  // In the signOut function
   const signOut = useCallback(async () => {
     // Track logout event
     analytics.trackEvent("logout")
