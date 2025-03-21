@@ -1,4 +1,7 @@
 {
   "buildCommand": "cd ../../packages/shared && yarn build && cd ../../apps/backend && yarn build",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "nodeVersion": "18.x"
 }
+
