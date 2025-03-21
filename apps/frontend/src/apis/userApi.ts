@@ -1,18 +1,23 @@
 import type { User, UserResponse, UserUpdateData } from "@ebuddy/shared"
-import { getAuth } from "firebase/auth"
 
 // Update to use Vercel API URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api"
 
 async function getAuthToken(): Promise<string> {
-  const auth = getAuth()
-  const user = auth.currentUser
+  try {
+    const { getAuth } = await import("firebase/auth")
+    const auth = getAuth()
+    const user = auth.currentUser
 
-  if (!user) {
-    throw new Error("User not authenticated")
+    if (!user) {
+      throw new Error("User not authenticated")
+    }
+
+    return user.getIdToken()
+  } catch (error) {
+    console.error("Error getting auth token:", error)
+    throw error
   }
-
-  return user.getIdToken()
 }
 
 async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
