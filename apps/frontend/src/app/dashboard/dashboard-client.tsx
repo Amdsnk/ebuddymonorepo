@@ -2,9 +2,24 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Box, CircularProgress, Container, Typography, Paper, AppBar, Toolbar, Button, Grid } from "@mui/material"
+import {
+  Box,
+  CircularProgress,
+  Container,
+  Typography,
+  Paper,
+  AppBar,
+  Toolbar,
+  Button,
+  Grid,
+  Card,
+  CardContent,
+  Avatar,
+  Divider,
+  Chip,
+  Rating,
+} from "@mui/material"
 import { useAuth } from "@/hooks/useAuth"
-import UserCard from "@/components/molecules/UserCard"
 import type { User } from "@ebuddy/shared"
 
 // Client-side only dashboard
@@ -64,6 +79,10 @@ export default function DashboardClient() {
     }
   }, [user?.uid])
 
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString()
+  }
+
   if (loading) {
     return (
       <Container
@@ -121,9 +140,62 @@ export default function DashboardClient() {
                 </Typography>
               )}
 
-              <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
-                {userData && <UserCard user={userData} />}
-              </Box>
+              {userData && (
+                <Card sx={{ maxWidth: 500, width: "100%", mx: "auto", mb: 2 }}>
+                  <CardContent>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                      <Avatar
+                        src={userData.photoURL || undefined}
+                        alt={userData.displayName || "User"}
+                        sx={{ width: 56, height: 56, mr: 2 }}
+                      />
+                      <Box>
+                        <Typography variant="h5" component="div">
+                          {userData.displayName || "User"}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {userData.email}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Rating
+                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Rating value={userData.totalAverageWeightRatings} precision={0.5} readOnly />
+                        <Typography variant="body1" sx={{ ml: 1 }}>
+                          {userData.totalAverageWeightRatings.toFixed(1)}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Number of Rents
+                      </Typography>
+                      <Typography variant="h6">{userData.numberOfRents}</Typography>
+                    </Box>
+
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Last Active
+                      </Typography>
+                      <Typography variant="h6">{formatDate(userData.recentlyActive)}</Typography>
+                    </Box>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Chip label={`Created: ${formatDate(userData.createdAt)}`} size="small" variant="outlined" />
+                      <Chip label={`Updated: ${formatDate(userData.updatedAt)}`} size="small" variant="outlined" />
+                    </Box>
+                  </CardContent>
+                </Card>
+              )}
             </Paper>
           </Grid>
         </Grid>
