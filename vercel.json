@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd packages/shared && yarn build && cd ../.. && cd apps/frontend && yarn build",
+  "buildCommand": "yarn install && yarn build:shared && cd apps/frontend && yarn build",
   "outputDirectory": "apps/frontend/.next",
   "framework": "nextjs",
   "installCommand": "yarn install",
