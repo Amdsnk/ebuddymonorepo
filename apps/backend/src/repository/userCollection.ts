@@ -72,7 +72,16 @@ export const createUser = async (userId: string, userData: Partial<User>): Promi
       recentlyActive: userData.recentlyActive || now,
       createdAt: now,
       updatedAt: now,
+      // Add a potentialScore field that will be calculated and stored
+      potentialScore: 0,
     }
+
+    // Calculate the initial potential score
+    newUser.potentialScore = calculatePotentialScore(
+      newUser.totalAverageWeightRatings,
+      newUser.numberOfRents,
+      newUser.recentlyActive,
+    )
 
     await db.collection(USERS_COLLECTION).doc(userId).set(newUser)
 
@@ -83,62 +92,127 @@ export const createUser = async (userId: string, userData: Partial<User>): Promi
   }
 }
 
-// For the bonus query - compute potential score
-export const getPotentialUsers = async (limit = 10, lastScore?: number, lastId?: string): Promise<User[]> => {
+// Calculate potential score based on all three factors
+export const calculatePotentialScore = (rating: number, rents: number, lastActive: number): number => {
+  // Weights for each factor
+  const ratingWeight = 0.6 // Highest priority
+  const rentsWeight = 0.3 // Medium priority
+  const activityWeight = 0.1 // Lowest priority
+
+  // Normalize ratings (assuming ratings are between 0-5)
+  const normalizedRating = rating / 5
+
+  // Normalize number of rents (assuming 100 is a high number)
+  const normalizedRents = Math.min(rents / 100, 1)
+
+  // Normalize activity (more recent = higher score)
+  // Convert to days ago (0 = today, higher = older)
+  const daysAgo = (Date.now() - lastActive) / (1000 * 60 * 60 * 24)
+  // Normalize to 0-1 (0 = 30+ days ago, 1 = today)
+  const normalizedActivity = Math.max(0, 1 - daysAgo / 30)
+
+  // Compute final score (0-1 scale)
+  const score = normalizedRating * ratingWeight + normalizedRents * rentsWeight + normalizedActivity * activityWeight
+
+  // Scale to 0-100 for better readability and to avoid floating point issues
+  return Math.round(score * 10000) / 100
+}
+
+// Update potential scores for all users (can be run periodically)
+export const updateAllPotentialScores = async (): Promise<void> => {
   try {
-    // First, get all users and compute their scores
     const snapshot = await db.collection(USERS_COLLECTION).get()
 
-    const users = snapshot.docs.map((doc) => {
-      const data = doc.data() as Omit<User, "id">
-      const user = { id: doc.id, ...data } as User
+    const batch = db.batch()
 
-      // Compute potential score - this is a custom formula that combines all three factors
-      // We normalize each factor and then combine them with appropriate weights
-      const ratingWeight = 0.6 // Highest priority
-      const rentsWeight = 0.3 // Medium priority
-      const activityWeight = 0.1 // Lowest priority
+    snapshot.docs.forEach((doc) => {
+      const userData = doc.data()
+      const potentialScore = calculatePotentialScore(
+        userData.totalAverageWeightRatings || 0,
+        userData.numberOfRents || 0,
+        userData.recentlyActive || 0,
+      )
 
-      // Normalize ratings (assuming ratings are between 0-5)
-      const normalizedRating = user.totalAverageWeightRatings / 5
-
-      // Normalize number of rents (assuming 100 is a high number)
-      const normalizedRents = Math.min(user.numberOfRents / 100, 1)
-
-      // Normalize activity (more recent = higher score)
-      // Convert to days ago (0 = today, higher = older)
-      const daysAgo = (Date.now() - user.recentlyActive) / (1000 * 60 * 60 * 24)
-      // Normalize to 0-1 (0 = 30+ days ago, 1 = today)
-      const normalizedActivity = Math.max(0, 1 - daysAgo / 30)
-
-      // Compute final score
-      const potentialScore =
-        normalizedRating * ratingWeight + normalizedRents * rentsWeight + normalizedActivity * activityWeight
-
-      return { user, potentialScore }
+      batch.update(doc.ref, { potentialScore })
     })
 
-    // Sort by potential score
-    users.sort((a, b) => {
-      if (b.potentialScore !== a.potentialScore) {
-        return b.potentialScore - a.potentialScore
-      }
-      // If scores are equal, sort by ID for consistent pagination
-      return a.user.id.localeCompare(b.user.id)
-    })
+    await batch.commit()
+    console.log(`Updated potential scores for ${snapshot.size} users`)
+  } catch (error) {
+    console.error("Error updating potential scores:", error)
+    throw error
+  }
+}
 
-    // Apply pagination
-    let startIndex = 0
+// Efficient query for potential users with pagination
+export const getPotentialUsers = async (limit = 10, lastScore?: number, lastId?: string): Promise<User[]> => {
+  try {
+    let query = db
+      .collection(USERS_COLLECTION)
+      .orderBy("potentialScore", "desc")
+      .orderBy("id") // Secondary sort by ID for consistent pagination
+      .limit(limit)
+
+    // Apply cursor for pagination if provided
     if (lastScore !== undefined && lastId !== undefined) {
-      const lastIndex = users.findIndex((item) => item.potentialScore === lastScore && item.user.id === lastId)
-      if (lastIndex !== -1) {
-        startIndex = lastIndex + 1
-      }
+      query = query.startAfter(lastScore, lastId)
     }
 
-    return users.slice(startIndex, startIndex + limit).map((item) => item.user)
+    const snapshot = await query.get()
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as User)
   } catch (error) {
     console.error("Error fetching potential users:", error)
+    throw error
+  }
+}
+
+// Function to update a user's potential score
+export const updateUserPotentialScore = async (userId: string): Promise<void> => {
+  try {
+    const userDoc = await db.collection(USERS_COLLECTION).doc(userId).get()
+
+    if (!userDoc.exists) {
+      throw new Error(`User ${userId} not found`)
+    }
+
+    const userData = userDoc.data()
+    const potentialScore = calculatePotentialScore(
+      userData.totalAverageWeightRatings || 0,
+      userData.numberOfRents || 0,
+      userData.recentlyActive || Date.now(),
+    )
+
+    await userDoc.ref.update({ potentialScore })
+  } catch (error) {
+    console.error(`Error updating potential score for user ${userId}:`, error)
+    throw error
+  }
+}
+
+// Function to record user activity and update recentlyActive
+export const recordUserActivity = async (userId: string, activityType: string): Promise<void> => {
+  try {
+    const now = Date.now()
+
+    // Update the user document
+    await db.collection(USERS_COLLECTION).doc(userId).update({
+      recentlyActive: now,
+      updatedAt: now,
+    })
+
+    // Optionally log the activity in a separate collection
+    await db.collection("USER_ACTIVITIES").add({
+      userId,
+      activityType,
+      timestamp: now,
+    })
+
+    // Update the potential score
+    await updateUserPotentialScore(userId)
+
+    console.log(`Recorded activity ${activityType} for user ${userId}`)
+  } catch (error) {
+    console.error(`Error recording activity for user ${userId}:`, error)
     throw error
   }
 }
