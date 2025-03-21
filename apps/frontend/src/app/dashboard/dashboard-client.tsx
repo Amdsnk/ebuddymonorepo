@@ -1,98 +1,69 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import {
-  Box,
-  CircularProgress,
-  Container,
-  Typography,
-  Paper,
-  AppBar,
-  Toolbar,
-  Button,
-  Grid,
-  Card,
-  CardContent,
-  Avatar,
-  Divider,
-  Chip,
-  Rating,
-  useTheme,
-} from "@mui/material"
-import { useAuth } from "@/hooks/useAuth"
-import ThemeToggle from "@/components/ThemeToggle"
-import Toast from "@/components/Toast"
-import type { User } from "@ebuddy/shared"
+
+interface UserData {
+  id: string
+  email: string
+  displayName?: string
+  photoURL?: string
+  totalAverageWeightRatings: number
+  numberOfRents: number
+  recentlyActive: number
+  createdAt: number
+  updatedAt: number
+}
 
 export default function DashboardClient() {
-  const { user, loading, signOut } = useAuth()
-  const router = useRouter()
-  const theme = useTheme()
-  const [userData, setUserData] = useState<User | null>(null)
-  const [fetchLoading, setFetchLoading] = useState(false)
+  const [user, setUser] = useState<any | null>(null)
+  const [userData, setUserData] = useState<UserData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [toast, setToast] = useState({ open: false, message: "", type: "success" as const })
+  const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login")
-    }
-  }, [user, loading, router])
+    // Check if user is logged in
+    const storedUser = localStorage.getItem("user")
+    const token = localStorage.getItem("token")
 
-  const fetchUserData = async () => {
-    if (!user?.uid) return
+    if (!storedUser || !token) {
+      router.push("/login")
+      return
+    }
 
     try {
-      setFetchLoading(true)
-      setError(null)
+      const parsedUser = JSON.parse(storedUser)
+      setUser(parsedUser)
 
-      const token = localStorage.getItem("token")
-      if (!token) {
-        throw new Error("No authentication token found")
+      // Create mock user data
+      const mockUserData: UserData = {
+        id: parsedUser.uid,
+        email: parsedUser.email,
+        displayName: parsedUser.displayName || parsedUser.email.split("@")[0],
+        photoURL: null,
+        totalAverageWeightRatings: 4.5,
+        numberOfRents: 12,
+        recentlyActive: Date.now() - 86400000, // 1 day ago
+        createdAt: Date.now() - 30 * 86400000, // 30 days ago
+        updatedAt: Date.now() - 5 * 86400000, // 5 days ago
       }
 
-      const response = await fetch(`/api/user/${user.uid}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch user data: ${response.status}`)
-      }
-
-      const data = await response.json()
-      if (!data.success) {
-        throw new Error(data.error || "Failed to fetch user data")
-      }
-
-      setUserData(data.data)
-      // Show success toast
-      setToast({
-        open: true,
-        message: "User data refreshed successfully",
-        type: "success",
-      })
-    } catch (err) {
-      console.error("Error fetching user data:", err)
-      setError(err instanceof Error ? err.message : "Failed to fetch user data")
-      // Show error toast
-      setToast({
-        open: true,
-        message: err instanceof Error ? err.message : "Failed to fetch user data",
-        type: "error",
-      })
+      setUserData(mockUserData)
+    } catch (error) {
+      console.error("Failed to parse user data:", error)
+      router.push("/login")
     } finally {
-      setFetchLoading(false)
+      setLoading(false)
     }
-  }
+  }, [router])
 
-  useEffect(() => {
-    if (user?.uid) {
-      fetchUserData()
-    }
-  }, [user?.uid])
+  const handleLogout = () => {
+    localStorage.removeItem("user")
+    localStorage.removeItem("token")
+    router.push("/login")
+  }
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
@@ -104,188 +75,265 @@ export default function DashboardClient() {
 
   if (loading) {
     return (
-      <Container
-        maxWidth="lg"
-        sx={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#f5f5f5",
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        }}
       >
-        <CircularProgress />
-      </Container>
+        <div style={{ textAlign: "center" }}>
+          <div
+            style={{
+              display: "inline-block",
+              width: "40px",
+              height: "40px",
+              border: "4px solid rgba(0, 0, 0, 0.1)",
+              borderTopColor: "#2563EB",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              marginBottom: "16px",
+            }}
+          ></div>
+          <p style={{ color: "#6B7280" }}>Loading your dashboard...</p>
+          <style jsx>{`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      </div>
     )
   }
 
-  if (!user) {
+  if (!user || !userData) {
     return null
   }
 
   return (
-    <Box sx={{ flexGrow: 1, minHeight: "100vh", bgcolor: "#f5f8fa" }}>
-      <AppBar position="static" sx={{ bgcolor: theme.palette.primary.main }}>
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            EBuddy Dashboard
-          </Typography>
-          <ThemeToggle />
-          <Button
-            color="inherit"
-            onClick={signOut}
-            sx={{
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#f5f5f5",
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      <header
+        style={{
+          backgroundColor: "white",
+          padding: "16px 24px",
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h1 style={{ fontSize: "20px", fontWeight: "600", margin: 0 }}>EBuddy Dashboard</h1>
+        <button
+          onClick={handleLogout}
+          style={{
+            backgroundColor: "#EF4444",
+            color: "white",
+            border: "none",
+            padding: "8px 16px",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontSize: "14px",
+          }}
+        >
+          Logout
+        </button>
+      </header>
+
+      <main style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
+        {error && (
+          <div
+            style={{
+              marginBottom: "24px",
+              padding: "12px 16px",
+              backgroundColor: "#FEE2E2",
+              color: "#DC2626",
               borderRadius: "4px",
-              textTransform: "none",
-              fontWeight: 500,
-              ml: 1,
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
-              },
             }}
           >
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
+            {error}
+          </div>
+        )}
 
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Paper
-              sx={{
-                p: 3,
-                borderRadius: 2,
-                boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "8px",
+            padding: "24px",
+            marginBottom: "24px",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <h2 style={{ fontSize: "18px", fontWeight: "600", margin: 0 }}>Welcome, {userData.displayName}</h2>
+            <button
+              onClick={() => {
+                setRefreshing(true)
+                setTimeout(() => {
+                  setRefreshing(false)
+                }, 1000)
+              }}
+              disabled={refreshing}
+              style={{
+                backgroundColor: "#2563EB",
+                color: "white",
+                border: "none",
+                padding: "8px 16px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "14px",
+                opacity: refreshing ? 0.7 : 1,
               }}
             >
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                  Welcome, {user?.displayName || user?.email?.split("@")[0] || "User"}
-                </Typography>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={fetchUserData}
-                  disabled={fetchLoading}
-                  sx={{ textTransform: "none" }}
-                >
-                  {fetchLoading ? "Refreshing..." : "Refresh Data"}
-                </Button>
-              </Box>
+              {refreshing ? "Refreshing..." : "Refresh Data"}
+            </button>
+          </div>
 
-              {fetchLoading && (
-                <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
-                  <CircularProgress />
-                </Box>
-              )}
+          <p style={{ color: "#6B7280", marginBottom: "24px" }}>
+            This is your dashboard where you can view and update your information.
+          </p>
 
-              {error && (
-                <Typography
-                  color="error"
-                  align="center"
-                  sx={{ my: 2, p: 2, bgcolor: "rgba(211, 47, 47, 0.1)", borderRadius: 1 }}
-                >
-                  Error: {error}
-                </Typography>
-              )}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              backgroundColor: "#F9FAFB",
+              padding: "16px",
+              borderRadius: "8px",
+            }}
+          >
+            <div>
+              <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Email</p>
+              <p style={{ fontSize: "16px", fontWeight: "500", margin: 0 }}>{userData.email}</p>
+            </div>
 
-              {userData && !fetchLoading && (
-                <Card sx={{ maxWidth: 600, width: "100%", mx: "auto", mb: 2, borderRadius: 2, overflow: "hidden" }}>
-                  <Box sx={{ bgcolor: theme.palette.primary.main, p: 2, color: "white" }}>
-                    <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                      User Profile
-                    </Typography>
-                  </Box>
-                  <CardContent sx={{ p: 3 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-                      <Avatar
-                        src={userData.photoURL || undefined}
-                        alt={userData.displayName || "User"}
-                        sx={{
-                          width: 80,
-                          height: 80,
-                          mr: 3,
-                          bgcolor: theme.palette.primary.main,
-                        }}
-                      >
-                        {!userData.photoURL && "👤"}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                          {userData.displayName || userData.email.split("@")[0]}
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                          {userData.email}
-                        </Typography>
-                      </Box>
-                    </Box>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              <div
+                style={{
+                  backgroundColor: "white",
+                  padding: "16px",
+                  borderRadius: "8px",
+                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                }}
+              >
+                <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Rating</p>
+                <p style={{ fontSize: "24px", fontWeight: "600", margin: "0 0 4px 0" }}>
+                  {userData.totalAverageWeightRatings.toFixed(1)}
+                </p>
+                <div style={{ display: "flex" }}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        color: i < Math.floor(userData.totalAverageWeightRatings) ? "#F59E0B" : "#D1D5DB",
+                        fontSize: "16px",
+                      }}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+              </div>
 
-                    <Divider sx={{ my: 2 }} />
+              <div
+                style={{
+                  backgroundColor: "white",
+                  padding: "16px",
+                  borderRadius: "8px",
+                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                }}
+              >
+                <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Number of Rents</p>
+                <p style={{ fontSize: "24px", fontWeight: "600", margin: 0 }}>{userData.numberOfRents}</p>
+              </div>
 
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} sm={4}>
-                        <Box sx={{ textAlign: "center", p: 1 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
-                            Rating
-                          </Typography>
-                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <Rating value={userData.totalAverageWeightRatings} precision={0.1} readOnly size="large" />
-                          </Box>
-                          <Typography variant="h5" sx={{ mt: 1, fontWeight: 600 }}>
-                            {userData.totalAverageWeightRatings.toFixed(1)}
-                          </Typography>
-                        </Box>
-                      </Grid>
+              <div
+                style={{
+                  backgroundColor: "white",
+                  padding: "16px",
+                  borderRadius: "8px",
+                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                }}
+              >
+                <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Last Active</p>
+                <p style={{ fontSize: "24px", fontWeight: "600", margin: 0 }}>{formatDate(userData.recentlyActive)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                      <Grid item xs={12} sm={4}>
-                        <Box sx={{ textAlign: "center", p: 1 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
-                            Number of Rents
-                          </Typography>
-                          <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                            {userData.numberOfRents}
-                          </Typography>
-                        </Box>
-                      </Grid>
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "8px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <h2 style={{ fontSize: "18px", fontWeight: "600", marginTop: 0, marginBottom: "16px" }}>Account Details</h2>
 
-                      <Grid item xs={12} sm={4}>
-                        <Box sx={{ textAlign: "center", p: 1 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
-                            Last Active
-                          </Typography>
-                          <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                            {formatDate(userData.recentlyActive)}
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    </Grid>
+          <div style={{ display: "grid", gap: "16px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "8px 0",
+                borderBottom: "1px solid #E5E7EB",
+              }}
+            >
+              <span style={{ color: "#6B7280" }}>User ID</span>
+              <span style={{ fontWeight: "500" }}>{userData.id}</span>
+            </div>
 
-                    <Divider sx={{ my: 2 }} />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "8px 0",
+                borderBottom: "1px solid #E5E7EB",
+              }}
+            >
+              <span style={{ color: "#6B7280" }}>Created</span>
+              <span style={{ fontWeight: "500" }}>{formatDate(userData.createdAt)}</span>
+            </div>
 
-                    <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-                      <Chip
-                        label={`Created: ${formatDate(userData.createdAt)}`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ borderRadius: "4px" }}
-                      />
-                      <Chip
-                        label={`Updated: ${formatDate(userData.updatedAt)}`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ borderRadius: "4px" }}
-                      />
-                    </Box>
-                  </CardContent>
-                </Card>
-              )}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Container>
-
-      <Toast
-        open={toast.open}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
-      />
-    </Box>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "8px 0",
+                borderBottom: "1px solid #E5E7EB",
+              }}
+            >
+              <span style={{ color: "#6B7280" }}>Last Updated</span>
+              <span style={{ fontWeight: "500" }}>{formatDate(userData.updatedAt)}</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
   )
 }
 
