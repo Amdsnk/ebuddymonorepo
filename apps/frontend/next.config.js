@@ -2,10 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@ebuddy/shared"],
-  // Use standalone output instead of export
+  // Use standalone output
   output: "standalone",
-  // Disable static optimization for problematic pages
-  staticPageGenerationTimeout: 1,
   // Skip type checking during build
   typescript: {
     ignoreBuildErrors: true,
@@ -13,15 +11,11 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Add this to ensure proper loading of MUI styles
-  modularizeImports: {
-    "@mui/material": {
-      transform: "@mui/material/{{member}}",
-    },
-    "@mui/icons-material": {
-      transform: "@mui/icons-material/{{member}}",
-    },
+  // Disable static exports
+  experimental: {
+    disableStaticImages: true,
   },
 }
 
 module.exports = nextConfig
+
