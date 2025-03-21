@@ -1,9 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import { ThemeRegistry } from "@/theme/ThemeRegistry"
-import { Providers } from "@/store/provider"
-import ErrorBoundary from "@/components/ErrorBoundary"
+import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -19,13 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <ErrorBoundary>
-          <ThemeRegistry>
-            <Providers>{children}</Providers>
-          </ThemeRegistry>
-        </ErrorBoundary>
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }
