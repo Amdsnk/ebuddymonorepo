@@ -1,5 +1,5 @@
-// This file is no longer needed for Vercel deployment
-// Next.js API routes are used instead of Firebase Functions
+// This file is no longer needed for Next.js API routes
+// Next.js API routes are used instead of Express
 
 // Export a dummy function to satisfy TypeScript
 export const api = () => {
