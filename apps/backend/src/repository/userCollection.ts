@@ -73,14 +73,14 @@ export const createUser = async (userId: string, userData: Partial<User>): Promi
       createdAt: now,
       updatedAt: now,
       // Add a potentialScore field that will be calculated and stored
-      potentialScore: 0,
+      potentialScore: 0
     }
 
     // Calculate the initial potential score
     newUser.potentialScore = calculatePotentialScore(
       newUser.totalAverageWeightRatings,
       newUser.numberOfRents,
-      newUser.recentlyActive,
+      newUser.recentlyActive
     )
 
     await db.collection(USERS_COLLECTION).doc(userId).set(newUser)
@@ -93,7 +93,11 @@ export const createUser = async (userId: string, userData: Partial<User>): Promi
 }
 
 // Calculate potential score based on all three factors
-export const calculatePotentialScore = (rating: number, rents: number, lastActive: number): number => {
+export const calculatePotentialScore = (
+  rating: number,
+  rents: number,
+  lastActive: number
+): number => {
   // Weights for each factor
   const ratingWeight = 0.6 // Highest priority
   const rentsWeight = 0.3 // Medium priority
@@ -112,7 +116,10 @@ export const calculatePotentialScore = (rating: number, rents: number, lastActiv
   const normalizedActivity = Math.max(0, 1 - daysAgo / 30)
 
   // Compute final score (0-1 scale)
-  const score = normalizedRating * ratingWeight + normalizedRents * rentsWeight + normalizedActivity * activityWeight
+  const score = 
+    normalizedRating * ratingWeight + 
+    normalizedRents * rentsWeight + 
+    normalizedActivity * activityWeight
 
   // Scale to 0-100 for better readability and to avoid floating point issues
   return Math.round(score * 10000) / 100
@@ -122,20 +129,20 @@ export const calculatePotentialScore = (rating: number, rents: number, lastActiv
 export const updateAllPotentialScores = async (): Promise<void> => {
   try {
     const snapshot = await db.collection(USERS_COLLECTION).get()
-
+    
     const batch = db.batch()
-
-    snapshot.docs.forEach((doc) => {
+    
+    snapshot.docs.forEach(doc => {
       const userData = doc.data()
       const potentialScore = calculatePotentialScore(
         userData.totalAverageWeightRatings || 0,
         userData.numberOfRents || 0,
-        userData.recentlyActive || 0,
+        userData.recentlyActive || 0
       )
-
+      
       batch.update(doc.ref, { potentialScore })
     })
-
+    
     await batch.commit()
     console.log(`Updated potential scores for ${snapshot.size} users`)
   } catch (error) {
@@ -147,19 +154,18 @@ export const updateAllPotentialScores = async (): Promise<void> => {
 // Efficient query for potential users with pagination
 export const getPotentialUsers = async (limit = 10, lastScore?: number, lastId?: string): Promise<User[]> => {
   try {
-    let query = db
-      .collection(USERS_COLLECTION)
+    let query = db.collection(USERS_COLLECTION)
       .orderBy("potentialScore", "desc")
       .orderBy("id") // Secondary sort by ID for consistent pagination
       .limit(limit)
-
+    
     // Apply cursor for pagination if provided
     if (lastScore !== undefined && lastId !== undefined) {
       query = query.startAfter(lastScore, lastId)
     }
-
+    
     const snapshot = await query.get()
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as User)
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as User)
   } catch (error) {
     console.error("Error fetching potential users:", error)
     throw error
@@ -170,18 +176,18 @@ export const getPotentialUsers = async (limit = 10, lastScore?: number, lastId?:
 export const updateUserPotentialScore = async (userId: string): Promise<void> => {
   try {
     const userDoc = await db.collection(USERS_COLLECTION).doc(userId).get()
-
+    
     if (!userDoc.exists) {
       throw new Error(`User ${userId} not found`)
     }
-
-    const userData = userDoc.data()
+    
+    const userData = userDoc.data() || {}
     const potentialScore = calculatePotentialScore(
       userData.totalAverageWeightRatings || 0,
       userData.numberOfRents || 0,
-      userData.recentlyActive || Date.now(),
+      userData.recentlyActive || Date.now()
     )
-
+    
     await userDoc.ref.update({ potentialScore })
   } catch (error) {
     console.error(`Error updating potential score for user ${userId}:`, error)
@@ -193,27 +199,26 @@ export const updateUserPotentialScore = async (userId: string): Promise<void> =>
 export const recordUserActivity = async (userId: string, activityType: string): Promise<void> => {
   try {
     const now = Date.now()
-
+    
     // Update the user document
     await db.collection(USERS_COLLECTION).doc(userId).update({
       recentlyActive: now,
-      updatedAt: now,
+      updatedAt: now
     })
-
+    
     // Optionally log the activity in a separate collection
-    await db.collection("USER_ACTIVITIES").add({
+    await db.collection('USER_ACTIVITIES').add({
       userId,
       activityType,
-      timestamp: now,
+      timestamp: now
     })
-
+    
     // Update the potential score
     await updateUserPotentialScore(userId)
-
+    
     console.log(`Recorded activity ${activityType} for user ${userId}`)
   } catch (error) {
     console.error(`Error recording activity for user ${userId}:`, error)
     throw error
   }
 }
-
