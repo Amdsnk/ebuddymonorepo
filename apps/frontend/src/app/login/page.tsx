@@ -1,8 +1,20 @@
-export const dynamic = "force-dynamic"
+import LoginForm from "@/components/organisms/LoginForm"
+import { Box } from "@mui/material"
 
-import { redirect } from "next/navigation"
-
-export default function Home() {
-  redirect("/login")
+export default function LoginPage() {
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        p: 2,
+      }}
+    >
+      <LoginForm />
+    </Box>
+  )
 }
 
