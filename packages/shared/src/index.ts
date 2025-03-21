@@ -1,2 +1,2 @@
-export type * from "./types/user"
+export * from "./types/user"
 
