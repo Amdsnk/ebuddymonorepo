@@ -1,4 +1,4 @@
-import { User, UserUpdateData } from "@ebuddy/shared"
+import type { User, UserUpdateData } from "@ebuddy/shared"
 
-export { User, UserUpdateData }
+export type { User, UserUpdateData }
 
