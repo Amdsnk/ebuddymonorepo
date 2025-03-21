@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd ../.. && turbo run build --filter=@ebuddy/frontend...",
+  "installCommand": "cd ../.. && yarn install"
+}
+
