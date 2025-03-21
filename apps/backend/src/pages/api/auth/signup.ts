@@ -14,35 +14,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ success: false, error: "Email and password are required" })
     }
 
-    // Create user in Firebase Auth
-    const userRecord = await auth.createUser({
-      email,
-      password,
-      emailVerified: false,
-    })
+    try {
+      // Create user in Firebase Auth
+      const userRecord = await auth.createUser({
+        email,
+        password,
+        emailVerified: false,
+      })
 
-    // Create user in Firestore
-    await createUser(userRecord.uid, {
-      email: userRecord.email || "",
-      displayName: userRecord.displayName || "",
-      photoURL: userRecord.photoURL || "",
-    })
+      // Create user in Firestore
+      await createUser(userRecord.uid, {
+        email: userRecord.email || "",
+        displayName: userRecord.displayName || "",
+        photoURL: userRecord.photoURL || "",
+      })
 
-    // Generate a custom token
-    const token = await auth.createCustomToken(userRecord.uid)
+      // Generate a custom token
+      const token = await auth.createCustomToken(userRecord.uid)
 
-    return res.status(200).json({
-      success: true,
-      data: {
-        token,
-        user: {
-          uid: userRecord.uid,
-          email: userRecord.email,
-          displayName: userRecord.displayName,
-          photoURL: userRecord.photoURL,
+      return res.status(200).json({
+        success: true,
+        data: {
+          token,
+          user: {
+            uid: userRecord.uid,
+            email: userRecord.email,
+            displayName: userRecord.displayName,
+            photoURL: userRecord.photoURL,
+          },
         },
-      },
-    })
+      })
+    } catch (error) {
+      console.error("User creation error:", error)
+      return res.status(400).json({ success: false, error: "User creation failed" })
+    }
   } catch (error) {
     console.error("Signup error:", error)
     return res.status(500).json({ success: false, error: "Registration failed" })
