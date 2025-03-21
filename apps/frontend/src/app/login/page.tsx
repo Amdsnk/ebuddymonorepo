@@ -4,121 +4,111 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Box, Button, Card, CardContent, TextField, Typography, Alert, Container } from "@mui/material"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
+    setIsSubmitting(true)
 
     try {
-      // Simple validation
+      // Validate inputs
       if (!email || !password) {
-        setError("Email and password are required")
-        return
+        throw new Error("Email and password are required")
       }
 
-      // Mock login
-      console.log("Logging in with:", email)
-      localStorage.setItem("user", JSON.stringify({ email }))
-      localStorage.setItem("token", "mock-token")
+      // For demo purposes, accept any email/password
+      console.log("Login attempt with:", email)
 
-      // Redirect to dashboard
+      // Store user info in localStorage
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          uid: "user-123",
+          email,
+          displayName: email.split("@")[0],
+        }),
+      )
+      localStorage.setItem("token", "mock-token-123")
+
+      // Navigate to dashboard
       router.push("/dashboard")
     } catch (err) {
-      setError("Login failed")
-      console.error(err)
+      console.error("Auth error:", err)
+      setError(err instanceof Error ? err.message : "Authentication failed")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   return (
-    <div
-      style={{
+    <Container
+      maxWidth="sm"
+      sx={{
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
-        padding: "20px",
       }}
     >
-      <div
-        style={{
-          maxWidth: "400px",
-          width: "100%",
-          padding: "20px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-          borderRadius: "8px",
-          backgroundColor: "white",
-        }}
-      >
-        <h1 style={{ textAlign: "center", marginBottom: "20px" }}>Sign In</h1>
+      <Card sx={{ width: "100%" }}>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h4" component="h1" gutterBottom align="center">
+            EBuddy Login
+          </Typography>
 
-        {error && (
-          <div
-            style={{
-              backgroundColor: "#ffebee",
-              color: "#c62828",
-              padding: "10px",
-              borderRadius: "4px",
-              marginBottom: "20px",
-            }}
-          >
-            {error}
-          </div>
-        )}
+          <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
+            Enter any email and password to log in
+          </Typography>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "8px" }}>Email Address</label>
-            <input
-              type="email"
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Box component="form" onSubmit={handleSubmit} noValidate>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="Email Address"
+              name="email"
+              autoComplete="email"
+              autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-              }}
+              disabled={isSubmitting}
             />
-          </div>
-
-          <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "8px" }}>Password</label>
-            <input
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Password"
               type="password"
+              id="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-              }}
+              disabled={isSubmitting}
             />
-          </div>
 
-          <button
-            type="submit"
-            style={{
-              width: "100%",
-              padding: "12px",
-              backgroundColor: "#1976d2",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "16px",
-            }}
-          >
-            Sign In
-          </button>
-        </form>
-      </div>
-    </div>
+            <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }} disabled={isSubmitting}>
+              {isSubmitting ? "Signing in..." : "Sign In"}
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+    </Container>
   )
 }
 
