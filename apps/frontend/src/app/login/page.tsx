@@ -1,44 +1,22 @@
-"use client"
+import dynamic from "next/dynamic"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import LoginForm from "@/components/organisms/LoginForm"
-import { useAuth } from "@/hooks/useAuth"
-import { Box, CircularProgress, Container } from "@mui/material"
+// Import the login form with no SSR
+const LoginForm = dynamic(() => import("@/components/organisms/LoginForm"), { ssr: false })
 
 export default function LoginPage() {
-  const { user, loading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (user && !loading) {
-      router.push("/dashboard")
-    }
-  }, [user, loading, router])
-
-  if (loading) {
-    return (
-      <Container
-        maxWidth="sm"
-        sx={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}
-      >
-        <CircularProgress />
-      </Container>
-    )
-  }
-
   return (
-    <Box
-      sx={{
+    <div
+      style={{
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        p: 2,
+        padding: "16px",
       }}
     >
       <LoginForm />
-    </Box>
+    </div>
   )
 }
+
