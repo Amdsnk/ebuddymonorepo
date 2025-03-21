@@ -1,7 +1,6 @@
 "use client"
 
 import { Button, Container, Typography, Paper, Box } from "@mui/material"
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 
 interface ErrorFallbackProps {
   error: Error
@@ -19,9 +18,7 @@ export default function ErrorFallback({ error, resetErrorBoundary }: ErrorFallba
           textAlign: "center",
         }}
       >
-        <Box sx={{ mb: 3, color: "error.main" }}>
-          <ErrorOutlineIcon sx={{ fontSize: 60 }} />
-        </Box>
+        <Box sx={{ mb: 3, color: "error.main", fontSize: "3rem" }}>⚠️</Box>
         <Typography variant="h4" component="h1" gutterBottom>
           Something went wrong
         </Typography>
