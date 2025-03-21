@@ -25,4 +25,3 @@ export default function UpdateButton({ userId, ...props }: UpdateButtonProps) {
     </Button>
   )
 }
-
