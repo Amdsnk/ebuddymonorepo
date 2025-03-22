@@ -9,6 +9,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const userId = req.query.userId as string
 
+  // Calculate a mock potential score based on the current time to simulate changes
+  const now = Date.now()
+  const randomFactor = Math.sin(now / 10000) * 0.1 + 0.9 // Value between 0.8 and 1.0
+
   // This is a mock implementation
   // In a real app, you would validate the token and fetch user data from your database
   return res.status(200).json({
@@ -18,11 +22,12 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       email: "angela.soenoko@gmail.com",
       displayName: "Angela Soenoko",
       photoURL: null,
-      totalAverageWeightRatings: 4.5,
-      numberOfRents: 12,
-      recentlyActive: Date.now() - 86400000, // 1 day ago
-      createdAt: Date.now() - 30 * 86400000, // 30 days ago
-      updatedAt: Date.now() - 5 * 86400000, // 5 days ago
+      totalAverageWeightRatings: 4.5 * randomFactor,
+      numberOfRents: Math.floor(12 * randomFactor),
+      recentlyActive: now,
+      createdAt: now - 30 * 86400000, // 30 days ago
+      updatedAt: now - Math.floor(Math.random() * 5) * 86400000, // 0-5 days ago
+      potentialScore: 85.75 * randomFactor, // Mock potential score
     },
   })
 }
