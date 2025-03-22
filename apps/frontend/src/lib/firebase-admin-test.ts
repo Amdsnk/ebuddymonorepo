@@ -1,6 +1,6 @@
 // This file is for testing purposes only and should not be included in production
 import { initializeApp, getApps, cert } from "firebase-admin/app"
-import { getFirestore } from "firebase-admin/firestore"
+import { getDatabase } from "firebase-admin/database"
 
 export async function testFirebaseAdminConnection() {
   try {
@@ -23,17 +23,18 @@ export async function testFirebaseAdminConnection() {
       initializeApp({
         credential: cert(JSON.parse(serviceAccount)),
         projectId: process.env.FIREBASE_PROJECT_ID,
+        databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`,
       })
     }
 
-    const db = getFirestore()
+    const db = getDatabase()
 
-    // Try to access a collection
-    const snapshot = await db.collection("USERS").limit(1).get()
+    // Try to access a reference
+    const snapshot = await db.ref("USERS").limitToFirst(1).get()
 
     return {
       success: true,
-      message: `Successfully connected to Firestore. Found ${snapshot.size} users.`,
+      message: `Successfully connected to Realtime Database. Found ${snapshot.exists() ? "data" : "no data"} in USERS.`,
     }
   } catch (error) {
     console.error("Firebase Admin connection error:", error)
