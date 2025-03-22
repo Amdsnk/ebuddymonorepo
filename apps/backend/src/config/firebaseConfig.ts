@@ -9,10 +9,10 @@ if (!admin.apps.length) {
 
   admin.initializeApp({
     credential: serviceAccount ? admin.credential.cert(serviceAccount) : admin.credential.applicationDefault(),
-    databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`, // Add this line
+    databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`,
   })
 }
 
-export const db = admin.database() // Changed from admin.firestore()
+export const db = admin.database()
 export const auth = admin.auth()
 
