@@ -13,6 +13,7 @@ interface UserData {
   recentlyActive: number
   createdAt: number
   updatedAt: number
+  potentialScore?: number
 }
 
 export default function DashboardPage() {
@@ -22,6 +23,57 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+
+  // Function to fetch user data from the API
+  const fetchUserData = async () => {
+    try {
+      setRefreshing(true)
+      setError(null)
+
+      const storedUser = localStorage.getItem("user")
+      const token = localStorage.getItem("token")
+
+      if (!storedUser || !token) {
+        throw new Error("User not authenticated")
+      }
+
+      const parsedUser = JSON.parse(storedUser)
+
+      // Fetch user data from the API
+      const response = await fetch(`/api/user/${parsedUser.uid}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch user data: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to fetch user data")
+      }
+
+      setUserData(data.data)
+
+      // Record this activity
+      await fetch(`/api/user/activity`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ activityType: "dashboard_view" }),
+      })
+    } catch (error) {
+      console.error("Error fetching user data:", error)
+      setError(error instanceof Error ? error.message : "Failed to fetch user data")
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   useEffect(() => {
     // Check if user is logged in
@@ -37,20 +89,8 @@ export default function DashboardPage() {
       const parsedUser = JSON.parse(storedUser)
       setUser(parsedUser)
 
-      // Create mock user data
-      const mockUserData: UserData = {
-        id: parsedUser.uid,
-        email: parsedUser.email,
-        displayName: parsedUser.displayName || parsedUser.email.split("@")[0],
-        photoURL: null,
-        totalAverageWeightRatings: 4.5,
-        numberOfRents: 12,
-        recentlyActive: Date.now() - 86400000, // 1 day ago
-        createdAt: Date.now() - 30 * 86400000, // 30 days ago
-        updatedAt: Date.now() - 5 * 86400000, // 5 days ago
-      }
-
-      setUserData(mockUserData)
+      // Fetch user data on initial load
+      fetchUserData()
     } catch (error) {
       console.error("Failed to parse user data:", error)
       router.push("/login")
@@ -109,7 +149,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (!user || !userData) {
+  if (!user) {
     return null
   }
 
@@ -180,14 +220,11 @@ export default function DashboardPage() {
               marginBottom: "16px",
             }}
           >
-            <h2 style={{ fontSize: "18px", fontWeight: "600", margin: 0 }}>Welcome, {userData.displayName}</h2>
+            <h2 style={{ fontSize: "18px", fontWeight: "600", margin: 0 }}>
+              Welcome, {userData?.displayName || user.displayName || user.email.split("@")[0]}
+            </h2>
             <button
-              onClick={() => {
-                setRefreshing(true)
-                setTimeout(() => {
-                  setRefreshing(false)
-                }, 1000)
-              }}
+              onClick={fetchUserData}
               disabled={refreshing}
               style={{
                 backgroundColor: "#2563EB",
@@ -220,7 +257,7 @@ export default function DashboardPage() {
           >
             <div>
               <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Email</p>
-              <p style={{ fontSize: "16px", fontWeight: "500", margin: 0 }}>{userData.email}</p>
+              <p style={{ fontSize: "16px", fontWeight: "500", margin: 0 }}>{userData?.email || user.email}</p>
             </div>
 
             <div
@@ -240,14 +277,14 @@ export default function DashboardPage() {
               >
                 <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Rating</p>
                 <p style={{ fontSize: "24px", fontWeight: "600", margin: "0 0 4px 0" }}>
-                  {userData.totalAverageWeightRatings.toFixed(1)}
+                  {userData?.totalAverageWeightRatings.toFixed(1) || "N/A"}
                 </p>
                 <div style={{ display: "flex" }}>
                   {Array.from({ length: 5 }).map((_, i) => (
                     <span
                       key={i}
                       style={{
-                        color: i < Math.floor(userData.totalAverageWeightRatings) ? "#F59E0B" : "#D1D5DB",
+                        color: userData && i < Math.floor(userData.totalAverageWeightRatings) ? "#F59E0B" : "#D1D5DB",
                         fontSize: "16px",
                       }}
                     >
@@ -266,7 +303,7 @@ export default function DashboardPage() {
                 }}
               >
                 <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Number of Rents</p>
-                <p style={{ fontSize: "24px", fontWeight: "600", margin: 0 }}>{userData.numberOfRents}</p>
+                <p style={{ fontSize: "24px", fontWeight: "600", margin: 0 }}>{userData?.numberOfRents || "0"}</p>
               </div>
 
               <div
@@ -278,8 +315,27 @@ export default function DashboardPage() {
                 }}
               >
                 <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Last Active</p>
-                <p style={{ fontSize: "24px", fontWeight: "600", margin: 0 }}>{formatDate(userData.recentlyActive)}</p>
+                <p style={{ fontSize: "24px", fontWeight: "600", margin: 0 }}>
+                  {userData ? formatDate(userData.recentlyActive) : "N/A"}
+                </p>
               </div>
+
+              {userData?.potentialScore !== undefined && (
+                <div
+                  style={{
+                    backgroundColor: "white",
+                    padding: "16px",
+                    borderRadius: "8px",
+                    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                  }}
+                >
+                  <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 4px 0" }}>Potential Score</p>
+                  <p style={{ fontSize: "24px", fontWeight: "600", margin: 0 }}>{userData.potentialScore.toFixed(2)}</p>
+                  <p style={{ fontSize: "12px", color: "#6B7280", margin: "4px 0 0 0" }}>
+                    Based on ratings, rents, and activity
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -304,7 +360,7 @@ export default function DashboardPage() {
               }}
             >
               <span style={{ color: "#6B7280" }}>User ID</span>
-              <span style={{ fontWeight: "500" }}>{userData.id}</span>
+              <span style={{ fontWeight: "500" }}>{userData?.id || user.uid}</span>
             </div>
 
             <div
@@ -316,7 +372,7 @@ export default function DashboardPage() {
               }}
             >
               <span style={{ color: "#6B7280" }}>Created</span>
-              <span style={{ fontWeight: "500" }}>{formatDate(userData.createdAt)}</span>
+              <span style={{ fontWeight: "500" }}>{userData ? formatDate(userData.createdAt) : "N/A"}</span>
             </div>
 
             <div
@@ -328,7 +384,7 @@ export default function DashboardPage() {
               }}
             >
               <span style={{ color: "#6B7280" }}>Last Updated</span>
-              <span style={{ fontWeight: "500" }}>{formatDate(userData.updatedAt)}</span>
+              <span style={{ fontWeight: "500" }}>{userData ? formatDate(userData.updatedAt) : "N/A"}</span>
             </div>
           </div>
         </div>
