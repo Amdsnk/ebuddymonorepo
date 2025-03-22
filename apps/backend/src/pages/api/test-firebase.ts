@@ -21,17 +21,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       admin.initializeApp({
         credential: admin.credential.cert(JSON.parse(serviceAccount)),
         projectId: process.env.FIREBASE_PROJECT_ID,
+        databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`,
       })
     }
 
-    const db = admin.firestore()
+    const db = admin.database()
 
-    // Try to access a collection
-    const snapshot = await db.collection("USERS").limit(1).get()
+    // Try to access a reference
+    const snapshot = await db.ref("USERS").limitToFirst(1).get()
 
     res.status(200).json({
       success: true,
-      message: `Successfully connected to Firestore. Found ${snapshot.size} users.`,
+      message: `Successfully connected to Realtime Database. Found ${snapshot.exists() ? "data" : "no data"} in USERS.`,
       environment: {
         projectId: process.env.FIREBASE_PROJECT_ID,
         hasServiceAccount: !!process.env.FIREBASE_SERVICE_ACCOUNT,
